@@ -1,19 +1,62 @@
 # Kubernetes
 
 ## What Kubernetes is?
+Open source container orchierstration tool.
+Developed by Googlee,
+Helps manage containerized applications.
+K8s offers:
+High Avilability,
+Scalability, or high performance,
+Disaster recovery - backup and restore.
+### Basic architecture:
+At least one master node (run several K8s processes absolutely necessary: API Server, Controller Manager, Scheduler, etcd ), connected couple worker nodes, each node has kubelet process. On each worker node run Docker container. Next very important service is Virtual Network (Creates one unified machine)
+#### API Server
+Entrypoint to K8s cluster
+#### Controller Manager
+keeps track of what happening in the cluster.
+#### Scheduler
+Ensure Pods placement
+#### etcd
+Kubernetes backing store
 Allows you to manage containers in a vendor-independent manner.
+Better to have at least two master nodes. Without master node, it is impossible to access worker nodes.
+## Worker nodes
+higher workload,
+much bigger and more resources
+
 ### Pod
- - the smallest unit in Kubernetes
+ - the smallest unit in Kubernetes, creates layer over container.
+ - usually 1 application per Pod
+ - each Pod get its own IP address, new IP address on re-create
  - one or more containers that share resources such as disk resources and a network and are part of a single context
  - Pods are ephemeral by design - short-lived, transient, stateless
    - Example 1: Pod containing an nginx container with a website
    - Example 2: A pod containing two containers: nginx with a website and a second container that checks the git repository for a new version.
+
 ### Service
-  - The basic method for exposing services (ports) to other services
+  - The basic method for exposing services (ports) to other services, (Internal Service in case of iex. database to which cannot be accessible from outside. Check Ingress)
+  - lifecycle of Pod and Service not connected. Pod dies, service keep running.
+  - Permament IP address
   - Receives a fixed IP address in the cluster
   - Receives a fixed DNS name in the cluster based on the service name and namespace (in Kubernetes, namespace is a way to logically divide applications/projects) in which it was launched
   - Is by design persistent – ​​the opposite of ephemeral
     - Example: exposing MySQL services to applications in the cluster
+### Ingress
+Request goes firstly to Ingress and it does forwarding it to service.
+### ConfigMap
+External configuration of our application (URLs of database or other services) so in case of ie. URL change you do not need to build new image, just adjust change in ConfigMap.
+! ConfigMap is for non-confidential data only !
+Instead of use Secret
+### Secret
+Just like ConfigMap but store data in base64. In order to safely use Secrets, take at least the following steps:
+   - Enable Encryption at Rest for Secrets
+   - Enable or configure RBAC rules that restrict reading data in Secret (including via indirect means).
+   - Where appropriate, also use mechanisms such as RBAC to limit which principals are allowed to create new Secrets or replace existing ones.
+### Data Storage
+#### Volumes
+attaches physical hard drive to your Pod (local machine, remote storage outside of K8s)
+! Kubernetes doesn't manage data persistance !
+
 ### Kubernetes always tries and strives to establish a target state.
 ## Control Plane components
 ### Kube-apiserver, the heart of the cluster
