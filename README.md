@@ -157,3 +157,32 @@ spec:
   nodeSelector:
     gpu: nvidia
 ```
+#### Service
+access to services provided by Pods, static IP unique for cluster, static DNS in namespace
+
+#### Cluster IP
+provides the service on an internal virtual IP in the cluster's internal network
+#### NodePort
+Extends service ClusterIP, expose the Pod port on each node's IP address, can be defined statically or dynamically in scope: 30 000 - 32 767. DO NOT START OTHER SERVICES ON HOSTS IN MENTIONED SCOPE!
+#### LoadBalancer
+extends NodePort, work in conjunction with an external system to map the external IP address of the KUBERNETES cluster to the hosted service, application or website
+```
+apiVersion: v1
+kind: Pod
+metadata: 
+ name: multi-container-example
+ labels:
+   app: nginx
+   env: prod
+spec:
+  type: LoadBalancer
+  selctor:
+   app: nginx
+   env: pod
+  ports:
+   protocol:TCP
+   port:80
+   targetPort:80 
+```
+#### ExternalName
+used to reference external services outside of cluster, 
