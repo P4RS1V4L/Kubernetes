@@ -57,6 +57,21 @@ Just like ConfigMap but store data in base64. In order to safely use Secrets, ta
 attaches physical hard drive to your Pod (local machine, remote storage outside of K8s)
 ! Kubernetes doesn't manage data persistance !
 
+! Database can't be replicated via Deployment !
+coz it has states. Required mechanism to decide which Pod read from storage, which Pod write to storage. Avoid Data Inconsistences. That mechanism is offered STATESFULSET
+### StatefulSet
+Component designed for MySQL, MongoDB, ElasticSearch, other databases.
+## DEPLOYMENT = for stateLESS Apps
+## StatefulSet = for stateFUL Apps or Databases.
+DB are often hosted outside of Kubernetes.
+# SUMMARY:
+Pod - abstraction of containers
+Service - communication
+Ingress - route traffic to cluster
+ConfigMap & Secret - external configuration
+Volume - data persistence
+Deployment & StatefulSet - replication
+
 ### Kubernetes always tries and strives to establish a target state.
 ## Control Plane components
 ### Kube-apiserver, the heart of the cluster
