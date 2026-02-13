@@ -8,11 +8,11 @@ Node1 contains 2 application Pods: my-app & DB
   - Worker Nodes do the actual work
 ##### Master processes
 - 4 processes run on every master node!
-  1. API Server
-    client -> _API Server_ (cluster gateway, act as a gatekeeper for authentication) -> validates request -> ..other processes .. -> Pod.
+  1. API Server (you as client, interact with API Server, cluster gateway which gets initial requests about updates in the cluster or updates, act as a gatekeeper for authentication)
+    client -> _API Server_ -> validates request -> ..other processes .. -> Pod.
       Only one entrypoint into the cluster
-  2. Scheduler
-    Schedule new Pod -> API Server -> Scheduler -> where to put the Pod? -> Kubelet
+  2. Scheduler (just decides on which Node, new Pod should be scheduled)
+    Schedule new Pod -> API Server -> _Scheduler_ -> where to put the Pod? -> Kubelet
   3. Controller manager (detects cluster state changes)
        Controller Manger -> Scheduler -> Kubelet
-  4. etcd (Key Value store of cluster state)
+  4. etcd (Key Value store of cluster state, cluster 'brain', application data is NOT stored in etcd)
