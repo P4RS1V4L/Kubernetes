@@ -285,7 +285,7 @@ By default K8s offers 4 namespaces:
 ```
 $ kubectl create namespace my-namespace    // or via yaml file - namespace: mynamespace
 ```
-Access service in another Namespace (use ConfigMap!)
+#### Access service in another Namespace (use ConfigMap!)
 ```
 apiVersion: v1
 kind: ConfigMap
@@ -293,6 +293,12 @@ metdata:
  name: mysql-configmap
 data:
  db_url: mysql-service.database
+```
+#### Change active namespace
+Install tool kubectx
+```
+$ kubens              // list available namespaces
+$ kubens my-namespace // set default namespace to my-namespace
 ```
 Components which cant be created within a Namespace:
 ```
