@@ -274,3 +274,27 @@ spec:
 #### ExternalName
 used to reference external services outside of cluster, 
 
+#### Namespaces
+Organise resources in namespaces, virtual cluster inside a cluster. Allows to group resources, access and resource limits. 
+By default K8s offers 4 namespaces:
+- default,                // resurce you create are located here.
+- kube-node-lease         // contains information about availability of a node.
+- kube-public             // public accessible data, configmap which contains custer information
+- kube-system             // do NOT create or modify in kube-system, system processes, 
+- kubenetes-dashboard     // only with minikube installation, not avail. in standard cluster
+```
+$ kubectl create namespace my-namespace    // or via yaml file - namespace: mynamespace
+```
+Access service in another Namespace (use ConfigMap!)
+```
+apiVersion: v1
+kind: ConfigMap
+metdata:
+ name: mysql-configmap
+data:
+ db_url: mysql-service.database
+```
+Components which cant be created within a Namespace:
+```
+$ kubectl api-resources --namespaced=false
+```
