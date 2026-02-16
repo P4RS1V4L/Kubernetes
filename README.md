@@ -274,7 +274,7 @@ spec:
 #### ExternalName
 used to reference external services outside of cluster, 
 
-#### Namespaces
+### Namespaces
 Organise resources in namespaces, virtual cluster inside a cluster. Allows to group resources, access and resource limits. 
 By default K8s offers 4 namespaces:
 - default,                // resurce you create are located here.
@@ -304,3 +304,49 @@ Components which cant be created within a Namespace:
 ```
 $ kubectl api-resources --namespaced=false
 ```
+### K8s Service
+Pods are ephemeral - are destroyed frequently, and when restart it gets new IP. Service gives stable IP address, loadbalancing, communication within & outside cluster (web browser, database)
+#### several types of servces:
+- ClusterIP services (default type)
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+ name: microservice-one-service
+spec:
+ selector:
+  app: microservice-one
+ ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 3000
+```
+- Service Communication: selector
+  which Pods to forward the request to?
+  Pods are identifid via _selectors_
+- Headless Services (Pods want to talk directly with specific Pod example: stateful applications: databases)
+  Is activated by set cluseterIP as none.
+  ```
+  spec:
+   clusterIP: None
+  ```
+- NodePort attribute (external traffic has access to fixed port on each Worker Node, example: mongo-express.yaml), is extension of ClusterIP service
+  ```
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: mongo-express-service
+  spec:
+    selector:
+      app: mongo-express
+    type: LoadBalancer
+    ports:
+      - protocol: TCP
+        port: 8081
+        targetPort: 8081
+        nodePort: 30000  // range: 30000 - 32767!
+  ```
+- LoadBalancer services
+  Is na extension of NodePort service, service becomes accessible externally through cloud providers LoadBalancer (when we create LoadBalancer, NodePort and ClusterIP service are created automatically)
+  
