@@ -42,7 +42,43 @@ much bigger and more resources
   - Is by design persistent – ​​the opposite of ephemeral
     - Example: exposing MySQL services to applications in the cluster
 ### Ingress
-Request goes firstly to Ingress and it does forwarding it to service.
+Request goes firstly to Ingress and it does forwarding to internal service. (support https)
+#### example YAML File: External Service
+```
+apiVersion: v1
+kind: Service
+metadata:
+ name: myapp-external-service
+spec:
+ selector:
+  app: myapp
+ type: LoadBalancer
+ ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    nodePort: 35010
+```
+#### Exampel YAML File: Ingress (with routing rules)
+```
+apiVersion: networking.k*s.io/v1
+kind: Ingress
+metadata:
+ name: myapp-ingress
+spec:
+ rules:
+ - host: myapp.com //everything after vaild domain name is considered as routing rules
+   http:
+    paths:
+    - backend:
+       serviceName: myapp-internal-service
+       servicePort: 8080
+```
+#### How to configure Ingress in cluster?
+1. install Ingress Controller (additional Pod)  // $ minikube addons enable ingress
+2. create rules,
+3. 
+
 ### ConfigMap
 External configuration of our application (URLs of database or other services) so in case of ie. URL change you do not need to build new image, just adjust change in ConfigMap.
 ! ConfigMap is for non-confidential data only !
