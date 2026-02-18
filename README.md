@@ -174,9 +174,13 @@ coz it has states. Required mechanism to decide which Pod read from storage, whi
 
 
 ### StatefulSet
-Component designed for MySQL, MongoDB, ElasticSearch, other databases.
-## DEPLOYMENT = for stateLESS Apps
-## StatefulSet = for stateFUL Apps or Databases.
+Component designed for MySQL, MongoDB, ElasticSearch, other databases (stateful applications).
+
+#### DEPLOYMENT = for stateLESS Apps
+#### StatefulSet = for stateFUL Apps or Databases.
+
+Deployment vs StatefulSet
+
 DB are often hosted outside of Kubernetes.
 # SUMMARY:
 Pod - abstraction of containers
