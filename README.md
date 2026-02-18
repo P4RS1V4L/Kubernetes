@@ -88,13 +88,77 @@ Just like ConfigMap but store data in base64. In order to safely use Secrets, ta
    - Enable Encryption at Rest for Secrets
    - Enable or configure RBAC rules that restrict reading data in Secret (including via indirect means).
    - Where appropriate, also use mechanisms such as RBAC to limit which principals are allowed to create new Secrets or replace existing ones.
-### Data Storage
-#### Volumes
+### Data Storage (must survive cluster crash, available on all nodes, does not depend on the pod lifecycle)
+#### Persistent Volume
+- created via YAML file,
+- needs actual physical storage or cloud-storage
+  NFS Storage example:
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+ name: pv-name
+spec:
+ capacity:
+  storage: 5Gi
+ volumeMode: Filesystem
+ accessModes:
+  - ReadWriteOnce
+ persistentVolumeReclaimPolicy: Recycle
+ storageClassName: slow
+ mountOptions:
+  - hard
+  - nfsvers=4.0
+ nfs:
+  path: /dir/path/on/nfs/server
+  server: nfs-server-ip-address
+```
+ Google Cloud example:
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+ name: test-volume
+ labels:
+  failure-domain.beta.kubernetes.io/zone: us-central1-a__us-central1-b
+spec:
+ capacity:
+  storage: 5Gi
+ accessMode:
+ - ReadWriteOnce
+ gcePersistentDisk:
+  pdName: my-data-disk
+  fsType: ext4
+```
+Depending on storage type spec attributes differ - https://kubernetes.io/docs/concepts/storage/volumes/
+#### Persistent Volume Claim component - application has to claim the Persistent Volume
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+ name: pvc-name
+spec:
+ storageClassName: manual
+ volumeMode: Filesystem
+ accessModes:
+  - ReadWriteOnce
+ resources:
+  requests:
+   storage: 10Gi
+```
+#### 
+
 attaches physical hard drive to your Pod (local machine, remote storage outside of K8s)
 ! Kubernetes doesn't manage data persistance !
 
 ! Database can't be replicated via Deployment !
 coz it has states. Required mechanism to decide which Pod read from storage, which Pod write to storage. Avoid Data Inconsistences. That mechanism is offered STATESFULSET
+#### Persistent Volume Claim
+
+
+#### Storage Class
+
+
 ### StatefulSet
 Component designed for MySQL, MongoDB, ElasticSearch, other databases.
 ## DEPLOYMENT = for stateLESS Apps
