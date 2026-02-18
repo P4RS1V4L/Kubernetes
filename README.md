@@ -146,8 +146,22 @@ spec:
   requests:
    storage: 10Gi
 ```
-#### 
-
+#### Storage Class
+SC provisions Persistent Volumes dynamically when PersistentVolmeClaim clamis it
+- admin configure storage,
+- create Persistent Volume,
+- K8s Users claim PV using PVC
+```
+apiVersion: storage.k8s.io/v11
+kind: StorageClass
+metadata:
+ name: storage-class-name
+Provisioner: kubernetes.io/aws-ebs
+parameters:
+ type: io1
+ iopsPerGB: "10"
+ fsType: ext4
+```
 attaches physical hard drive to your Pod (local machine, remote storage outside of K8s)
 ! Kubernetes doesn't manage data persistance !
 
