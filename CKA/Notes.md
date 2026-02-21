@@ -212,11 +212,20 @@ Najmniejszy obiekt w Kubernetesie. Grupuje jeden lub więcej kontenerów, które
 Proces aktualizacji, w którym Kubernetes stopniowo wymienia stare Pody na nowe (v1 -> v2). Dzięki testom gotowości (**Readiness Probes**) użytkownik nie doświadcza przerwy w działaniu aplikacji.
 
 **Oto, dlaczego dane nie giną, gdy Pod umiera, oraz jak to się dzieje, że użytkownik nie zauważa awarii.**
-Wersja 1: Perspektywa Techniczna (Jak to działa?)
+**Wersja 1: Perspektywa Techniczna (Jak to działa?)**
 W tej wersji skupiamy się na konkretnych komponentach, które odpowiadają za "nieśmiertelność" danych i ciągłość ruchu.
+- **Warstwa Danych (Persistent Volumes):** Pod domyślnie jest ulotny. Dlatego dane zapisujemy na zewnętrznym zasobie zwanym Persistent Volume (PV). Jest to dysk sieciowy (np. w chmurze), który istnieje niezależnie od Poda. Kiedy Pod ginie, Kubernetes tworzy nowy egzemplarz i "przepina" do niego ten sam dysk. To jak przełożenie karty pamięci z zepsutego aparatu do nowego.
+- **Warstwa Sieciowa (Services)**: Użytkownik nie łączy się bezpośrednio z Podem (którego IP zmienia się po każdym restarcie), ale z Service. Service to stały adres IP i nazwa DNS. Działa on jak inteligentny rozdzielacz (Load Balancer), który w ułamku sekundy orientuje się, że jeden Pod padł i natychmiast kieruje Twój ruch do nowego, zdrowego Poda.
+- **Warstwa Aplikacji (State Management)**: Aby dane "w locie" (np. zawartość koszyka w sklepie) nie zginęły, dobrzy programiści przechowują je w zewnętrznej bazie danych lub w systemie takim jak Redis, a nie w pamięci RAM samego kontenera.
+**Wersja 2: Perspektywa Analogii (Obrazowe porównanie)**
+W tej wersji używamy porównania do **Biura Obsługi Klienta**, aby łatwiej było zapamiętać koncepcję.
+- **Pod to Pracownik (Ulotny)**: Wyobraź sobie okienko w banku. Jeśli pracownik (Pod) musi nagle wyjść, na jego miejsce natychmiast siada nowy.
+- **Persistent Volume to Segregator (Dane)**: Pracownik nie trzyma Twoich dokumentów w kieszeni. Trzyma je w segregatorze (PV) na biurku. Gdy nowy pracownik zastępuje starego, po prostu otwiera ten sam segregator i widzi, na czym stanęła sprawa. Dane są bezpieczne, bo nie należą do pracownika, tylko do biurka.
+- **Service to Numer Okienka (Dostęp):** Ty jako klient nie szukasz "Pana Janka", tylko idziesz do "Okienka nr 5". Nawet jeśli w trakcie Twojej sprawy pracownicy się zmienią, Ty stoisz przed tym samym okienkiem (Service). System dba o to, żebyś zawsze miał kogoś po drugiej stronie, kto ma dostęp do Twojego segregatora.
 
-Warstwa Danych (Persistent Volumes): Pod domyślnie jest ulotny. Dlatego dane zapisujemy na zewnętrznym zasobie zwanym Persistent Volume (PV). Jest to dysk sieciowy (np. w chmurze), który istnieje niezależnie od Poda. Kiedy Pod ginie, Kubernetes tworzy nowy egzemplarz i "przepina" do niego ten sam dysk. To jak przełożenie karty pamięci z zepsutego aparatu do nowego.
-
-Warstwa Sieciowa (Services): Użytkownik nie łączy się bezpośrednio z Podem (którego IP zmienia się po każdym restarcie), ale z Service. Service to stały adres IP i nazwa DNS. Działa on jak inteligentny rozdzielacz (Load Balancer), który w ułamku sekundy orientuje się, że jeden Pod padł i natychmiast kieruje Twój ruch do nowego, zdrowego Poda.
-
-Warstwa Aplikacji (State Management): Aby dane "w locie" (np. zawartość koszyka w sklepie) nie zginęły, dobrzy programiści przechowują je w zewnętrznej bazie danych lub w systemie takim jak Redis, a nie w pamięci RAM samego kontenera.
+**Podsumowanie: Jak Kubernetes dba o ciągłość?**
+Element | Co się dzieje przy śmierci Poda? | Kto za to odpowiada?  
+--------|----------------------------------|-----------------------
+Pliki na dysku | Przetrwają, jeśli używasz Persistent Volumes. | PV / PVC
+Ruch użytkowników | Nie zostanie przerwany, bo ruch przejmie inny Pod. | Service
+Stan aplikacji | Przetrwa, jeśli trzymasz go w zewnętrznej bazie. | StatefulSet / Database
