@@ -17,3 +17,5 @@ alias kgsvcslwn='kubectl get service --show-labels --watch --namespace'
 
 alias kgwf='kubectl get --watch -f'
 ```
+
+full list: [source](https://kk) 
