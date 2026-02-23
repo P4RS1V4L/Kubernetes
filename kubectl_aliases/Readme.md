@@ -18,4 +18,4 @@ alias kgsvcslwn='kubectl get service --show-labels --watch --namespace'
 alias kgwf='kubectl get --watch -f'
 ```
 
-full list: [source](https://kk) 
+full list: [source](https://github.com/P4RS1V4L/Kubernetes/blob/main/kubectl_aliases/.kubectl_aliases_Large_list) 
