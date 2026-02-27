@@ -143,7 +143,7 @@ Deployment służy do aplikacji bezstanowych (stateless). To najczęstszy sposó
 Cecha | Deployment (Stateless) | StatefulSet (Stateful)
 ------|------------------------|------------------------
 Przeznaczenie | "Frontend, API, Mikroserwisy" | "Bazy danych, Kolejki, Systemy plików"
-Nazwa Poda | Losowa (np. app-x5z2),Stała i przewidywalna (db-0)
+Nazwa Poda | Losowa (np. app-x5z2) | Stała i przewidywalna (db-0)
 Zarządzanie dyskami | Często wspólny dysk lub brak | Indywidualny dysk dla każdego Poda
 Kolejność startu | Wszystkie naraz | "Jeden po drugim (0, potem 1...)"
 
