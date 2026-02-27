@@ -56,9 +56,10 @@ Każdy węzeł roboczy musi posiadać trzy kluczowe komponenty, aby móc dogada�
    To strażnik ruchu sieciowego. Odpowiada za to, aby pakiety trafiały tam, gdzie powinny – obsługuje reguły sieciowe na hoście i umożliwia komunikację między usługami (Services).
 3. **Container Runtime**
    To silnik, który fizycznie uruchamia kontenery. Kubernetes nie robi tego sam – potrzebuje oprogramowania trzeciego, takiego jak containerd czy CRI-O (kiedyś najpopularniejszy był Docker).
+   
 Porównanie: Control Plane vs. Worker Nodes
-Cecha			| Control Plane (Mózg)		|			Worker Node (Mięśnie)
------------|-----------------------|--------------------------------
+Cecha | Control Plane (Mózg) | Worker Node (Mięśnie)
+------|----------------------|--------------------------------
 Główna rola		|	Zarządzanie i podejmowanie decyzji.	|	Uruchamianie aplikacji (kontenerów).
 Kluczowe dane	|	Przechowuje stan całego klastra (etcd). |	Przechowuje logi i dane działających aplikacji.
 Liczba		|		Zazwyczaj 1-3 (dla redundancji).	|	Od jednego do tysięcy (skalowalność).
