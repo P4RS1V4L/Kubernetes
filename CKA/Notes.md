@@ -32,10 +32,17 @@ Mówiąc najprościej: Control Plane (warstwa sterowania) to „mózg” klastra
 Oto kluczowe elementy, które składają się na to centrum dowodzenia:
 Kluczowe komponenty Control Plane
 1. **kube-apiserver** To „okienko podawcze” klastra. Każda komenda, którą wpisujesz w kubectl, przechodzi właśnie tędy. To jedyny komponent, który rozmawia bezpośrednio z bazą danych klastra.
-2. **etcd** To pamięć klastra. Bardzo szybka i niezawodna baza danych (typu klucz-wartość), w której przechowywane są wszystkie informacje o stanie systemu: co działa, gdzie i z jakimi parametrami.
-3. **kube-scheduler** To logistyk. Kiedy pojawia się nowa aplikacja (Pod) do uruchomienia, scheduler sprawdza zasoby na dostępnych maszynach (Worker Nodes) i decyduje, gdzie ją „posadzić”, biorąc pod uwagę m.in. dostępne RAM i CPU.
-4. **kube-controller-manager** To strażnik porządku. Składa się z wielu kontrolerów, które dbają o to, by stan faktyczny zgadzał się ze stanem pożądanym. Na przykład: jeśli zadeklarowałeś, że mają działać 3 kopie aplikacji, a jedna padnie, kontroler to zauważy i wyda polecenie uruchomienia nowej.
-5. **cloud-controller-manager** (opcjonalnie)
+   a. Authenticate USer
+   b. VAlidate request
+   c. Retrieve data
+   d. Update ETCD
+   e. Scheduler
+   f. Kubelet
+    
+3. **etcd** To pamięć klastra. Bardzo szybka i niezawodna baza danych (typu klucz-wartość), w której przechowywane są wszystkie informacje o stanie systemu: co działa, gdzie i z jakimi parametrami.
+4. **kube-scheduler** To logistyk. Kiedy pojawia się nowa aplikacja (Pod) do uruchomienia, scheduler sprawdza zasoby na dostępnych maszynach (Worker Nodes) i decyduje, gdzie ją „posadzić”, biorąc pod uwagę m.in. dostępne RAM i CPU.
+5. **kube-controller-manager** To strażnik porządku. Składa się z wielu kontrolerów, które dbają o to, by stan faktyczny zgadzał się ze stanem pożądanym. Na przykład: jeśli zadeklarowałeś, że mają działać 3 kopie aplikacji, a jedna padnie, kontroler to zauważy i wyda polecenie uruchomienia nowej.
+6. **cloud-controller-manager** (opcjonalnie)
 Łącznik z chmurą (np. AWS, Azure, GCP). Pozwala Kubernetesowi zarządzać zasobami specyficznymi dla dostawcy, jak load balancery czy dyski sieciowe.
 
 Jak to działa w praktyce?
