@@ -40,9 +40,11 @@ Kluczowe komponenty Control Plane
    f. Kubelet
     
 3. **etcd** To pamięć klastra. Bardzo szybka i niezawodna baza danych (typu klucz-wartość), w której przechowywane są wszystkie informacje o stanie systemu: co działa, gdzie i z jakimi parametrami.
-4. **kube-scheduler** To logistyk. Kiedy pojawia się nowa aplikacja (Pod) do uruchomienia, scheduler sprawdza zasoby na dostępnych maszynach (Worker Nodes) i decyduje, gdzie ją „posadzić”, biorąc pod uwagę m.in. dostępne RAM i CPU.
+4. **kube-scheduler** To logistyk. Kiedy pojawia się nowa aplikacja (Pod) do uruchomienia, scheduler sprawdza zasoby na dostępnych maszynach (Worker Nodes) i decyduje, gdzie ją „posadzić”, biorąc pod uwagę m.in. dostępność RAM i CPU (wymagania mogą być ustawiane w settings)
 5. **kube-controller-manager** To strażnik porządku. Składa się z wielu kontrolerów, które dbają o to, by stan faktyczny zgadzał się ze stanem pożądanym. Na przykład: jeśli zadeklarowałeś, że mają działać 3 kopie aplikacji, a jedna padnie, kontroler to zauważy i wyda polecenie uruchomienia nowej.
-6. **cloud-controller-manager** (opcjonalnie)
+   - Node-Controller sprawdza status co 5 sekund. W przypadku otrzymania _hard bit_ node jest oznaczany jako unreachable po upływie 40 sekund. Nastepnie daje 5 minut na wstanie. Po tym czasie usuwa POD przypisany do tego noda i przenosi na działający.
+   - Replication-Controller - odpowiedzialny za monitorowanie ReplicaSet. Jeśli jakis pod umiera, tworzy nowy.
+7. **cloud-controller-manager** (opcjonalnie)
 Łącznik z chmurą (np. AWS, Azure, GCP). Pozwala Kubernetesowi zarządzać zasobami specyficznymi dla dostawcy, jak load balancery czy dyski sieciowe.
 
 Jak to działa w praktyce?
