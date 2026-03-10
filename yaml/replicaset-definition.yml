@@ -5,6 +5,8 @@ metadata:
   labels:
     app: myapp
     type: front-end
+  annotations:
+    buildversion: 1.34
 spec:
   template:
     metadata:
