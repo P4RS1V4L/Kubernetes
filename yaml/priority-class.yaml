@@ -3,5 +3,6 @@ kind: PriorityClass
 metadata:
   name: high-priority
 value: 1000000000
+globalDefault: false
 description: "Priority class  for mission critical pods"
 preemptionPolicy: PreemptLowerPriority
