@@ -1164,7 +1164,13 @@ spec:
     apiVersion: apps/v1
 	kind: Deployment
 	name: my-app
+  updatePolicy:
+    updateMode: "Auto"
   resourcePolicy:
     containerPolicies:
 	  - containerName: "my-app"
+	    minAllowed:
+		  cpu: "250m"
+        maxAllowed: 
+		  cpu: "2"
 	  contarolledResources: ["cpu"]
