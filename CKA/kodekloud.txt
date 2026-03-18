@@ -1165,7 +1165,7 @@ spec:
 	kind: Deployment
 	name: my-app
   updatePolicy:
-    updateMode: "Auto"
+    updateMode: "Auto"  //off - only recommends, does not change anything | Initial-obly changes on Pod creation, not later | Recreate-Evicts pods if usage goes beyond range | Auto-Updates existing pods to recommended numbers
   resourcePolicy:
     containerPolicies:
 	  - containerName: "my-app"
@@ -1173,4 +1173,13 @@ spec:
 		  cpu: "250m"
         maxAllowed: 
 		  cpu: "2"
-	  contarolledResources: ["cpu"]
+	    contarolledResources: ["cpu"]
+
+$ kubectl describe vpa my-app-vpa
+
+Feature					|    VPA (Vertical Scaling)					 | HPA (Horizontal Scaling)
+Scaling Method 			| increases CPU and memory of existing Pods  | Adds/Removes Pods based on load
+Pod Behavior    		| Restarts Pods to apply new resource value  | keeps existing Pods running
+Handles Traffic Spikes? | No, because scaling requires a Pod restart | Yes, instantly adds more Pods
+
+
