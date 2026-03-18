@@ -1133,7 +1133,7 @@ limitations: works only for CPU and memory resources, Pod QoS Class cannot be ch
 
 # manual:
 
-$ kubectl top pod my-app-pod 
+$ kubectl top pod my-app-pod      // assess CPU and memory consumption
 $ kubectl edit deployment my-app  // a nastepnie zmieniasz resources.cpu i resources.limits:
 
 resources:
