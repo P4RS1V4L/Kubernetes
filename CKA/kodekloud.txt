@@ -1,0 +1,1170 @@
+kubectl get pods -o wide
+kubectl delete pod webapp
+kubectl run redis --image=redis123 --dry-run=client -o yaml > redis.yaml
+kubectl create -f redis.yaml
+kubectl edit pod
+kubectl apply -f redis.yaml //sprawdz co tam masz i dostosuj do mojego pliku.
+kubectl describe pod new-replica-set-83f9
+
+###Replication controller###
+kubectl create -f replicaset-definition.yml
+kubectl get replicaset
+
+
+######Replicaset ######
+kubectl create -f replicaset.definition.yml
+kubectl scale --replicas=6 -f replicaset-definition.yml
+kubectl scale --replicas=6 replicaset myapp-replicaset
+kubectl delete replicaset myapp-replicaset
+kubectl replace -f replicaset-definition.yml
+kubectl edit replicaset new-replica-set
+kubectl describe replicaset new-replica-set
+kubectl explain replicaset 
+
+
+#### Deployment ##### 
+
+kubectl create -f /root/deployment-definition.yml
+kubectl edit deployment blue
+kubectl get deployments
+kubectl get replicaset
+kubectl get pods
+kubectl get all
+
+kubectl create deployment --image=nginx nginx --replicas=4 --dry-run=client -o yaml > nginx-deployment.yaml
+
+For example, if you were asked to create a pod or deployment with a specific name and image, you can simply run the kubectl run command.
+
+Use the below set of commands and try the previous practice tests again, but this time, try to use the below commands instead of YAML files. Try to use these as much as you can going forward in all exercises.
+
+Reference (Bookmark this page for the exam. It will be very handy):
+
+https://kubernetes.io/docs/reference/kubectl/conventions/
+
+Create an NGINX Pod
+
+kubectl run nginx --image=nginx
+
+Generate POD Manifest YAML file (-o yaml). Don’t create it(–dry-run)
+kubectl run nginx --image=nginx --dry-run=client -o yaml
+
+Create a deployment
+kubectl create deployment --image=nginx nginx
+
+Generate Deployment YAML file (-o yaml). Don’t create it(–dry-run)
+kubectl create deployment --image=nginx nginx --dry-run=client -o yaml
+
+Generate Deployment YAML file (-o yaml). Don’t create it(–dry-run) and save it to a file.
+kubectl create deployment --image=nginx nginx --dry-run=client -o yaml > nginx-deployment.yaml
+
+Make necessary changes to the file (for example, adding more replicas) and then create the deployment.
+kubectl create -f nginx-deployment.yaml
+OR
+
+In k8s version 1.19+, we can specify the –replicas option to create a deployment with 4 replicas.
+kubectl create deployment --image=nginx nginx --replicas=4 --dry-run=client -o yaml > nginx-deployment.yaml
+
+
+##### services #####
+- NodePort - internal port access
+- ClusterIP - external IP access
+- LoadBalancer
+
+NodePort:
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec: 
+  type: NodePort
+  ports:
+  - targetPort: 80
+    port: 80
+    nodePort: 30008
+  selector:
+	app: myapp
+	type: back-end		
+
+
+
+ClusterIP:
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec: 
+  type: ClusterIP
+  ports:
+  - targetPort: 80
+    port: 80
+  selector:
+	app: myapp
+	type: back-end
+
+LoadBalancer:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec: 
+  type: LoadBalancer
+  ports:
+  - targetPort: 80
+    port: 80
+	nodePort: 30008
+
+
+kubectl create -f service-definition.yml
+kubectl get services
+kubectl describe service
+
+##### Namespaces #####
+
+namespace-dev.yml:
+
+apiVersion: v1
+kind: Namespaces
+metadata:
+	name: dev
+
+a nastepnie tworzenie przy uzyciu komendy:
+kubectl create -f namespace-dev.yml
+lub
+kubectl create namespace <name>
+
+default namespaces (pods, services, dns services)
+kube-system - resources cannot be deleted.
+kube-public - resources available for all users
+dev,
+prod...
+czyli izolowanie zasobów przy uzyciu namespaces.
+jezeli musisz się polaczyc z zasobem zawartym w namespac 'dev' musisz użyć 'dev' w nazwie:
+mysql.connect("db-service.dev.svc.cluster.local") , gdzie cluster.local jest to default domain of k8s cluster. svc  to service, a db-service to nazwa serwisu.
+dla porownania service w default namespace wyglada tak: 
+mysql.connect("db-service")
+
+kubectl get pods --namespace=kube-system
+kubectl create -f pod-definition.yml
+kubectl create -f pod-definition.yml --namespace=dev
+
+switch na stałe do konkretnego namespace:
+kubectl config set-context $(kubectl config current-context) --namespace=dev
+kubectl get pods --all-namespaces
+
+#### Resource quota ####
+Compute-quota.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-quota
+  namespace: dev
+
+spec:
+  hard:
+    pods: "10"
+	requests.cpu: "4"
+	requests.memory: 5Gi
+	limits.cpu: "10"
+	limits.memory: 10Gi
+	
+kubectl create -f compute-quota.yaml
+
+Dzień #2
+
+#### Imperative vs Declarative ####
+
+Imperative approach (uzywany przy podstawowych zadaniach)
+Create objects:
+$ kubctl create -f nginx.yaml
+
+uptade objects:
+$ kubectl edit deployment nginx
+$ kubectl replace -f nginx.yaml
+$ kubectl replace --force -f nginx.yaml
+$ kubectl create -f nginx.yaml
+$ kubectl replace -f nginx.yaml
+
+Declarative approach (uzywany przy more complex actions):
+Create objects:
+$ kubectl apply -f nginx.yaml
+$ kubectl apply -f /path/to/config-files
+
+Update Objects
+$ kubectl apply -f nginx.yaml
+
+While you would be working mostly the declarative way – using definition files, imperative commands can help in getting one-time tasks done quickly, as well as generate a definition template easily. This would help save a considerable amount of time during your exams.
+
+Before we begin, familiarize yourself with the two options that can come in handy while working with the below commands:
+
+--dry-run By default as soon as the command is run, the resource will be created. If you simply want to test your command, use the --dry-run=client option. This will not create the resource; instead, it tells you whether the resource can be created and if your command is right.
+
+-o yaml This will output the resource definition in YAML format on the screen.
+
+Use the above two in combination to generate a resource definition file quickly that you can then modify and create resources as required instead of creating the files from scratch.
+
+POD
+Create an NGINX Pod
+kubectl run nginx --image=nginx
+
+Generate POD Manifest YAML file (-o yaml). Don’t create it(–dry-run)
+kubectl run nginx --image=nginx --dry-run=client -o yaml
+
+Deployment
+1. Uruchamia określoną liczbę kopii aplikacji (Podów).
+2. Pilnuje, aby zawsze działały (jeśli Pod padnie, Deployment go wskrzesi).
+3. Umożliwia łatwą aktualizację (zmianę wersji obrazu) bez przerywania pracy.
+
+Create a deployment
+kubectl create deployment --image=nginx nginx
+
+Generate Deployment YAML file (-o yaml). Don’t create it(–dry-run)
+$ kubectl create deployment --image=nginx nginx --dry-run=client -o yaml
+
+Generate Deployment with 4 Replicas
+kubectl create deployment nginx --image=nginx --replicas=4 --port=8080
+
+You can also scale a deployment using the
+$ kubectl scale
+command.
+
+$ kubectl scale deployment nginx--replicas=4
+Another way to do this is to save the YAML definition to a file and modify
+
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml > nginx-deployment.yaml
+You can then update the YAML file with the replicas or any other field before creating the deployment.
+
+Service
+Create a Service named redis-service of type ClusterIP to expose pod redis on port 6379
+
+kubectl expose pod redis --port=6379 --name=redis-service --dry-run=client -o yaml
+(This will automatically use the pod’s labels as selectors)
+
+Or
+
+kubectl create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml 
+(This will not use the pods labels as selectors, instead, it will assume selectors as app=redis.
+
+You cannot pass in selectors as an option.
+
+So, it does not work very well if your pod has a different label set. So, generate the file and modify the selectors before creating the service)
+
+Create a Service named nginx of type NodePort to expose pod nginx’s port 80 on port 30080 on the nodes:
+
+kubectl expose pod nginx --type=NodePort --port=80 --name=nginx-service --dry-run=client -o yaml
+(This will automatically use the pod’s labels as selectors, but you cannot specify the node port. You have to generate a definition file and then add the node port manually before creating the service with the pod.)
+
+Or
+
+kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml
+(This will not use the pod labels as selectors.)
+
+Both the above commands have their own challenges. While one of them cannot accept a selector, the other cannot accept a node port. I would recommend going with the
+kubectl expose command. If you need to specify a node port, generate a definition file using the same command and manually input the nodeport before creating the service.
+
+Reference:
+https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
+
+https://kubernetes.io/docs/reference/kubectl/conventions/
+
+$ kubectl api-resources  
+$ kubectl explain pod
+$ kubectl explain pods.spec
+$ kubectl explain pod --recursive  //returns yaml file sugestion 
+
+$ kubectl explain pod.spec.containers //when writing a yaml manifest for a pod, you want to undestand what fields are available under containers
+
+#### kubectl apply #####
+
+
+#### scheduling ####
+jest cos takiego jak manual scheduler
+
+spec:
+  nodeName: node02
+  
+  scheduler idzie po kazdym podzie i sprawdza ktory nie ma nazwy node02. te są kandydatami schedulera. Identyfikuje poprawny pod odpalając scheduling algorytm. Kiedy takiego znajdzie, zmienia jego nazwę na node02.
+  kiedy nie ma schedulera, Pod jest w pending state. Naprawić to można ustawiając nodeName: node02 w pod.yaml (nodeName can be specified only on creation time!)
+  What if Pod is already created: Kubernetes nie pozwoli wyedytować nodeName Poda, wiec trzeba zrobić binding object:
+  Pod-bind-definition.yaml
+ apiVersion: v1
+ kind: Binding
+ metadata:
+   name: nginx
+ target:
+   apiVersion: v1
+   kind: Node
+   name: node02
+   
+
+a nastepnie wywołujesz:
+$ curl --header "Content-Type:application/json" --request POST --data'{"apiVersion":"v1", "kind": "Binding" ...}
+http://$SERVER/api/v1/namespaces/default/pods/$PODNAME/binding/
+
+  
+#### Labels and Selectors #####
+  labels - tags helps to identify or group
+  selectors - filtry w yaml mowiace ktorych podów ze specyficznymi labels szukać.
+  group obects by...
+  
+  metadata:
+    name: simple-webapp
+	labels:
+	  app: App1
+	  Function: Front-end
+  spec...
+  
+  $ kubectl get pods --show-labels
+  $ kubectl get pods -l env=production
+  $ kubectl get pods --selector app=App1
+  $ kubectl label pods moja-apka status=unstable
+  $ kubectl get pods -l 'env=production,tier=frontend'
+  
+ labels w pliku yaml występuje kilka razy:
+ apiVersion: apps/v1
+ kind: ReplicaSet
+ metadata:
+   name: simple-webapp
+   labels:
+     app: App1  // labelsy na samej górze są odpowiedzialne za naznaczanie ReplicaSet.
+	 function: Front-end
+   annotations:
+    buildversion: 1.34	 
+ spec:
+   replicas: 3
+   selector:
+     matchLabels:
+       app: App1	  // odpowiedzialny za połączenie ReplicaSet z Podem
+ template:
+   metadata:
+     labels:
+       app: App1 //na samym dole są odpowiedzialne za naznaczanie Podów
+	   function: Front-end
+	   
+Dla Service dziła tak samo.	   
+Annotations - record other info such as id, version etc...	   
+
+
+##### Taints and Tolerations #####
+Taints - not accepted Pods, applied on person keeps some bugs away, but other do not. Person = node, bugs = pods. With Taints you can decide which Pods will NOT be applied by scheduler on specific nodes.
+$ kubectl taint nodes node-name key=value: taint-effect // taint-effect defines what happens with Pod if does not tolerance taint. 
+														//There are 3 effects: 
+															- NoSchedule, 
+															- PreferNoSchedule, system tries not to schedule
+															- NoExecute, new Pod will not be applied and existing Pod (for example applied beforee creating taints) will be evicted(eksmitowany) from node
+$ kubectl taint nodes node1 app=myapp:NoSchedule					
+
+Tolerations  - accepted Pods
+$ kubectl taint nodes node1 app=blue:NoSchedule 
+
+metadata:
+  name: myapp-pod
+  spec:
+    containers:
+	- name: nginx-containers
+	  image: nginx
+	tolerations:
+	  - key: app
+	    operator: "Equal"
+		value: "blue"
+		effect: "NoSchedule"
+		
+Scheduler nie stawia żadnego Poda na Master Node, ponieważ przy pierwszym starcie ten automatycznie otrzymuje taint NoSchedule.
+$ kubectl descibe node kubemaster | grep Taint
+
+Run the command: 
+ $ kubectl taint nodes controlplane node-role.kubernetes.io/control-plane:NoSchedule-    
+to untaint the node. Dash at the end means 'remove'
+
+########### Node selectors ###########
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: data-processor
+	image: data-processor
+  nodeSelector:
+	size: Large
+
+How to label nodes?
+$ kuebctl label nodes <node-name> <label-key>=<label-value>
+$ kubectl label nodes node-1 size=large
+$ kubectl get nodes --show-labels 
+Node selectors have limitations. In case of complex requests (more than two conditions) use node affinity
+
+##### Node affinity #####
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: data-processor
+	image: data-processor
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: In   // lub NotIn, Exists, DoesNotExist, Gt and Lt
+            values:
+			- Large
+			- Medium
+			
+			
+###### Resource Requirements ########
+kube-scheduler decyduje gdzie pod zostanie ulokowany.
+
+spec:
+  containers:
+  - name: memory-demo-ctr
+    image: polinux/stress
+    resources:
+      requests:
+        memory: "100Mi"
+		cpu: 2
+      limits:
+        memory: "200Mi"
+		
+What happens if Pod tries to exceed specified limit?
+CPU: Jeśli proces wewnątrz Poda próbuje użyć więcej CPU niż wynosi jego limit, system operacyjny zaczyna go spowalniać (throttling).
+Skutek dla aplikacji: Aplikacja nie przestaje działać, nie jest restartowana, ale staje się bardzo powolna. Rośnie czas odpowiedzi (latency), a operacje trwają znacznie dłużej.
+
+if pod will use more memory above limit, will be terminated. Out of Memory (OOM) error.
+you CANNOT edit specifications of an existing POD but you can edit yaml, which copy will be saved in TEMP location. Then delete POD, recreate it with using yaml from TEMP.
+The second option is to extract the pod definition in YAML format to a file using the command:
+kubectl get pod webapp -o yaml >&nbsp;my-new-pod.yaml
+Then make the changes to the exported file using an editor (vi editor). Save the changes $ vi my-new-pod.yaml
+Then delete existing and recreate new Pod.
+So if you are asked to edit a property of a POD part of a deployment you may do that simply by running the command:
+$ kubectl edit deployment my-deployment
+
+#### Daemon Sets ####
+Like Replica Sets. Perfect for deploying monitoring agent from of a pod in all nodes on your cluster.
+another case: networking.
+
+$ kubectl create -f daemon-set-definition.yaml
+$ kubectl get daemonsets
+$ kubectl describe daemonsets monitoring-daemon  
+$ kubectl get daemonsets --all-namespaces
+$ kubectl describe daemonset kube-proxy --namespace=kube-system     // bez uzycia namespace command zwróci 'error from the server'
+
+Jak stworzyć Daemona? użyć create deployment:
+$ kubectl create deployment <name> --image=<name> -n <nazwa-namespace> --dry-run=client -o yaml > file.yaml
+a nastepnie wyedytować pola jak niżej:
+
+Deploy a DaemonSet for FluentD Logging.
+kubectl create deployment elasticsearch --image=registry.k8s.io/fluentd-elasticsearch:1.20 -n kube-system --dry-run=client -o yaml > fluentd.yaml
+
+Then, edit the YAML as follows:
+
+Change: kind: Deployment → kind: DaemonSet
+Ensure: apiVersion: apps/v1
+Remove these fields from the YAML:
+spec.replicas
+spec.strategy
+status (entire section, if present)
+Finally, create the DaemonSet using:
+
+kubectl create -f fluentd.yaml
+
+
+########## Static Pods #################
+how to provide pod definition file to kubelet without a Kube API server? You can configure the kubelet to read the pod definition files from a directory on the server designated to store info about pods:
+/etc/kubernetes/manifests
+Kubelet check periodically the folder, reads files, create and ensure that pod stays alive. After changing yaml file, kubelet recreates Pod to meet new settins from file. Does not work for deployments, ReplicaSets, services.
+You can define custom path while running kubelet by 
+1. passing as option: 'pod-manifest-path=/etc/kuberentes/manifests'
+2. by command: staticPodPath: /etc/....
+ For static pod manifest path look at the file /var/lib/kubelet/config.yaml on node01
+to view static pods use:
+$ docker ps
+
+Difference between Static Pod   | Daemon Sets
+created by kubelet   		    | created by kube-apiserver
+Deploy Control Plane components | Deploy Monitoring Agents, Logging agents on nodes.
+as Static Pods
+both are ignored by the kube-scheduler.
+
+Create a static pod named static-busybox that uses the busybox image , run in the default namespace and the command sleep 1000
+kubectl run --restart=Never --image=busybox static-busybox --dry-run=client -o yaml --command -- sleep 1000 > /etc/kubernetes/manifests/static-busybox.yaml
+
+#### Priority Classes #####
+higher priority workloads always get scheduled without being interrupted by lower priority workloads - here helps priority classes.
+they are non-namespaced objects,
+priority defined by range of numbers: 1 000 000 000 -2 147 483 648
+
+$ kubectl get priorityclass
+
+create priority class:
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000000000
+description: "Priority class  for mission critical pods"
+
+reference in pod-definition.yaml
+spec:
+  containers:
+  priorityClassName: high-priority
+  
+komenda odpalająca priority-class.yaml
+$ kubectl apply -f priority-class.yaml  
+
+You can compare the priority classes on both pods using the following command:
+kubectl get pods -o custom-columns="NAME:.metadata.name,PRIORITY:.spec.priorityClassName"
+
+#### Day 3  #####
+Multiple scheduling 
+
+own k8s scheduling program. Some apps can go by default scheduler, others can go via your own custom scheduler.
+scheduler-config.yaml
+apiVersion: kubescheduler.config.k*s.io/v1
+kind: KubeSchedulerConfiguration
+profiels:
+- schedulerName: default-scheduler
+leaderElection: 	\\ choose which kube-scheduler use
+	leaderElect: true
+	resourceNamespace: kube-system
+	resourceName: lock-object-my-scheduler
+	
+to deploy additional scheduler, download kube-scheduler wget, deploy it in:
+ExecStart=/usr/local/bin/kube-scheduler \\
+	-- config=/etc/kubernetes/config/kube-scheeduler.yaml
+
+ExecStart=/usr/local/bin/kube-scheduler \\
+	-- config=/etc/kubernetes/config/my-scheeduler-config.yaml
+
+how use custom scheduler: add schedulerName: in pod.yaml file:
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  schedulerName: my-scheduler
+ 
+a nastepnie:
+$ kubectl create -f pod.yaml
+zmiany widać w:
+$ kubectl get events -o wide
+$ kubectl logs my-scheduler --namespace=kube-system 
+ 
+default namespace is kube-system   !!!!!
+jeżeli:
+$ kubectl get pods 
+NIC NIE zwraca  to użyj -A
+$ kubectl get pods -A
+
+$ kubectl get serviceaccount -n kube-system 
+$ kubectl get clusterrolebinding 
+
+Service Account:
+
+kubectl get sa my-scheduler -n kube-system
+
+#### Scheduler Profiles ####
+Pody przed odpaleniem są sortowane po priority:
+spec:
+  priorityClassName: high-priority
+ 
+Nastepnie Pod wchodzi w filter phase (have enough resources or name match:NodeResourcesFit, NodeName, NodeUnschedulable), Scoring phase (NodeResourcesFit, ImageLocality- czy ma image lokalnie) - scoring nodes according free space, CPU, and Binding (where Node is picked).
+
+##### Admission Controllers ###
+kubelet > (authentication via rbac, authentication via certs, Admission Controllers: AlwaysPullImages, DefaultStorageClass, NamespaceExist) kube-apiserver > Create Pod
+$ cat .kube/config     //showing configuration file where certificates can be checked.
+
+Admission Controllers - na tym etapie np jest sprawdzana poprawnosc polecenia, czy podany namespace istnieje itd... Na przykład NamespaceAutoProvision nie jest aktywny by default, tworzy automatycznie namespace jesli taki  nie istnieje.
+listowanie wszystkich aktywnych by default Admission Controllers:
+$ kube-apiserver -h | grep enable-admission-plugins
+lub
+$ kubectl exec kube-apiserver-controlplane -n kube-system -- kube-apiserver -h | grep enable-admission-plugins
+
+
+https://image-checker-webhook.default.svc:1323/image_policy
+/etc/kubernetes/imgvalidation
+
+zadanie 7/8:
+"Reconfigure the API server to enable the ImagePolicyWebhook admission plugin and ensure it can access the configuration files."
+
+Edit the kube-apiserver manifest:
+
+vi /etc/kubernetes/manifests/kube-apiserver.yaml
+Step 1: Update the admission plugins line:
+
+    - --enable-admission-plugins=NodeRestriction,ImagePolicyWebhook
+Step 2: Add the admission control config file flag:
+
+    - --admission-control-config-file=/etc/kubernetes/imgvalidation/admission-configuration.yaml
+Step 3: Add to volumes:
+
+    - name: imgvalidation
+      hostPath:
+        path: /etc/kubernetes/imgvalidation
+        type: Directory
+Add to volumeMounts:
+
+    - name: imgvalidation
+      mountPath: /etc/kubernetes/imgvalidation
+      readOnly: true 
+	  
+
+##### Validating and Mutating Admission Controllers ########	  
+
+validating admission controllers - validate requests and allow or deny it
+Mutating controllers - change request.
+
+Own admission controller:
+2 special controller available: mutatingAdmission webhood and validatingAdmission webhook.
+1. deploy webhook server
+2. setup it in kubernetes.
+
+Create a TLS secret named webhook-server-tls in the webhook-demo namespace.
+This secret will be used by the admission webhook server for secure communication over HTTPS.
+We have already created below cert and key for webhook server which should be used to create secret.
+Certificate : /root/keys/webhook-server-tls.crt
+Key : /root/keys/webhook-server-tls.key
+
+kubectl -n webhook-demo create secret tls webhook-server-tls \
+    --cert "/root/keys/webhook-server-tls.crt" \
+    --key "/root/keys/webhook-server-tls.key"
+	
+	
+	
+#### Logging and monitoring ########
+	
+monitoring k8s cluster.
+
+$ minikube addons enable metrics-server
+$ git clone https://github.com/kuernetes-sigs/metrics-server.git
+$ kubectl create -f deploy/1.8+/
+$ kubectl top node
+$ kubectl top pod
+
+
+#### Manging Application Logs #########
+
+$ docker logs -f ecf
+$ kubectl logs -f event-simulator-pod
+$ kubectl logs -f <pod-name> <container-name>
+
+
+#### Application Lifecycle management ##### 
+
+Rollbacks and Updates
+
+rollout command
+$ kubectl rollout status deployment/myapp-deployment
+$ kubectl rollout history deployment/myapp-deployme
+
+there are 2 types of deployment strategy:
+1. destroy all and create new instances Recreate Strategy (not default)- problem: period when is down app is not accessible for users.
+2. destroy and recreate one by one. Rolling Update.
+
+$ kubectl describe deployment myapp-deplyment  - will show which strategy has been used. StrategyType: Recreate 
+
+Upgrades
+First create new ReplicaSet and starts deploying containers there, at the same time taking down pods in old replica.
+$ kubectl get replicas 
+
+Rollback: 
+$ kubectl rollout undo deployment myapp-deployment
+	
+udpate deployments:	
+$ kubectl apply -f deployment-definition.yml	
+$ kubectl set image deployment/myapp-deployment nginx=nginx:1.91 	
+$ kubectl set image deploy frontend simple-webapp=kodekloud/webapp-color:v2   czyli kubectl set image deploy <nazwa-deploya> <nazwa-kontenera> <nazwa-obrazu>
+
+#### Configure Applications ######
+
+commands and arguments in pod yaml file:
+
+$ docker run ubuntu sleep 5000 (wait for 5000 seconds and exit)
+
+
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: [ "sleep", "5000" ]
+	
+	or
+	
+	command: [ "sleep" ]
+	args: [ "5000" ]
+	
+	or
+	
+	command:
+	- "sleep"
+	- "5000"
+	
+	or
+	command: [ "sleep", "5000" ]
+	args: ["--color-green"]
+	
+	
+lub (wiecej znajdziesz tu: $ kubectl run --help)
+$ kubectl run nginx --image=nginx -- <arg1> <arg2>...<argN>
+	
+	
+#### environment variables in k8s  #####
+
+plain key value example:
+
+spec:
+  containers:
+  env:
+  - name: APP_COLOR
+    value: pink
+
+ConfigMap:
+env:
+  - name: APP_COLOR
+    valueFrom:
+	  configMapKeyRef:
+	  
+env:
+  - name: APP_COLOR
+    valueFrom:
+	  secretKeyRef:
+	  
+### configuration data in K8s####
+
+ConfigMap
+APP_COLOR: blue
+APP_MODE: prod
+
+Imperative:
+
+$ kubectl create configmap <config-name> \
+	-- from-literal=<key>=<value>
+
+$ kubectl create configmap app-config \
+	--from-literal=APP_COLOR=blue \
+	--from-literal=APP_MOD=prod
+	
+$ kubectl create configmap <config-name> \
+	--from-file=<path-to-file>
+	
+$ kubectl create configmap <config-name> \
+	--from-file=app_config.properties
+
+Declarative:
+$ kubectl create -f	
+
+lets say we have following config map example:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_COLOR: blue
+  APP_MODE: prod
+  
+$ kubectl get configmaps
+$ kubectl describe configmaps
+  
+spec:
+  containers:
+  envFrom:
+    - configMapRef:  //pobieranie, referencja z config-map.yaml
+	  name: app-config   //pay attention on the name!
+      key: APP_COLOR
+	  
+Create a new ConfigMap for the webapp-color POD. Use the spec given below.
+
+ConfigMap Name: webapp-config-map
+Data: APP_COLOR=darkblue
+Data: APP_OTHER=disregard
+
+$ kubectl create configmap  webapp-config-map --from-literal=APP_COLOR=darkblue --from-literal=APP_OTHER=disregard
+	  
+spec:
+  containers:
+  - env:
+    - name: APP_COLOR
+      valueFrom:
+       configMapKeyRef:
+         name: webapp-config-map
+         key: APP_COLOR
+    image: kodekloud/webapp-color
+	
+	
+#### Secrets #####
+
+Secret
+DB_Host: mysql
+DB_User: root
+DB_Password: paswrd
+
+Imperative:
+$ kubectl create secret generic <secret-name> --from-literal=<key>=<value>
+
+$ kubectl create secret generic app-secret \
+	--from-literal=DB_Host=mysql \
+	--from-literal=DB_User=root \
+	--from-literal=DB_Password=paswrd
+	
+$ kubectl create secret generic <secret-name> \
+	--from-file=<path-to-file>
+
+$ kubectl create secret generic app-secret \
+	--from-file=app_secret.properties
+
+Declarative approach:
+
+apiVersion: v1xc70
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  DB_Host: <encoded_form>  // $echo -n 'mysql'   |base64      decode: $ echo -n 'bXlzcWw=' | base64 --decode
+  DB_User: <root>			// $echo -n 'root'   |base64
+  DB_Password: <psswrd>		// $echo -n 'psswrd' |base64
+
+$ kubectl create -f secret-data.yaml
+
+$ kubectl get secrets
+$ kubectl describe secrets
+$ kubectl get secret app-secret -o yaml
+
+secrets in Pods
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp-color
+labels:
+  name: simple-webapp
+spec:
+  containers:
+  - name: simple-webapp-color
+	image: simple-webapp-color
+	ports:
+	  - containerPort: 8080
+	envFrom:
+	  - secretRef:
+	      name: app-secret   //  !!! zwracaj uwage na spacje!!!
+		
+kubectl create secret generic db-secret \
+  --from-literal=DB_Host=sql01 \
+  --from-literal=DB_User=root \
+  --from-literal=DB_Password=password123
+  
+more materials: https://www.youtube.com/watch?v=MTnQW9MxnRI  
+
+Secrets are not encrypted, so it is not safer in that sense. However, some best practices around using secrets make it safer. As in best practices like:
+
+Not checking in secret object definition files to source code repositories.
+Enabling Encryption at Rest for Secrets so they are stored encrypted in ETCD.
+Also, the way Kubernetes handles secrets. Such as:
+
+A secret is only sent to a node if a pod on that node requires it.
+
+Kubelet stores the secret into a tmpfs so that the secret is not written to disk storage.
+
+Once the Pod that depends on the secret is deleted, kubelet will delete its local copy of the secret data as well.
+
+Read about the protections and risks of using secrets here.
+
+Having said that, there are other better ways of handling sensitive data like passwords in Kubernetes, such as using tools like Helm Secrets, and HashiCorp Vault.
+
+
+
+###### multicontainer pods ##########
+
+1. co-located containers ori form of multicontainer both run in pod, depend on each-other, no ability to define which container starts first and the order of that startup.
+
+Regular Init Containers - when initial job has to be done for example IT container that waits till db is ready before main app starts
+
+Sidercar Containers - like init container, starts side container, but istead of end it continues run, even after main app ends.
+
+Fajny przykład Co-located containers:
+
+pod-definition.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+  labels:
+    name: simple-webapp
+spec:
+  containers:
+  - name: web-app
+    image: web-app
+	ports:
+	  - containerPort: 8080
+  - name: main-app
+    image: main-app
+	
+Regular Init Containers (przykład z trzema kontenerami. kolejność ich odpalenia:db-checker, api-checker, web-app) :
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+  labels:
+    name: simple-webapp
+spec:
+  containers:
+  - name: web-app
+    image: web-app
+	ports:
+	  - containerPort: 8080
+  initContainers:	  
+  - name: db-checker
+    image: busybox
+	command: 'wait-for-db-to-start.sh'
+  
+  - name: api-checker
+    image: busybox
+	command: 'wait-for -db-to-start.sh'
+	
+Sidecar Containers
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+  labels:
+    name: simple-webapp
+spec:
+  containers:
+  - name: web-app
+    image: web-app
+	ports:
+	  - containerPort: 8080
+  initContainers:	  
+  - name: log-shipper
+    image: busybox
+	command: 'setup-log-shipper.sh'
+    restartPolicy: Always
+	
+	
+$ kubectl -n elastic-stack exec -it app -- cat /log/app.log	
+	
+It's important to understand how restarts work in multi-container Pods:
+
+If any main container (i.e., containers listed under spec.containers) exits and the Pod's restartPolicy is set to Always or OnFailure, all containers in the Pod are restarted.
+Kubernetes does not restart individual containers within a Pod. Instead, it treats the Pod as a single unit of execution and restarts the entire Pod if needed.
+This applies only to main containers, not init containers. Init containers are always run to completion before main containers begin and are not restarted individually.
+
+However, sometimes you may want to run a process that completes and exits before the main containers start. This is where init containers are used.
+
+Examples include:
+
+A script that pulls code or binaries from a repository before the application starts.
+A script that waits for an external service (like a database) to become available.	
+
+
+Understanding Init and Sidecar Containers in Kubernetes
+In a multi-container Pod, each container is expected to run a process that stays alive for the entire lifecycle of the Pod.
+
+For example, in a Pod with a web application and a logging agent, both containers are expected to remain active throughout the Pod’s lifecycle. The process in the logging agent container must stay alive as long as the web application is running. If any main container fails and the Pod's restartPolicy is Always or OnFailure, the entire Pod is restarted.
+
+Pod Restart Behavior in Multi-Container Pods
+It's important to understand how restarts work in multi-container Pods:
+
+If any main container (i.e., containers listed under spec.containers) exits and the Pod's restartPolicy is set to Always or OnFailure, all containers in the Pod are restarted.
+Kubernetes does not restart individual containers within a Pod. Instead, it treats the Pod as a single unit of execution and restarts the entire Pod if needed.
+This applies only to main containers, not init containers. Init containers are always run to completion before main containers begin and are not restarted individually.
+
+However, sometimes you may want to run a process that completes and exits before the main containers start. This is where init containers are used.
+
+Examples include:
+
+A script that pulls code or binaries from a repository before the application starts.
+A script that waits for an external service (like a database) to become available.
+What is an Init Container?
+An init container is a special container that runs before the main containers in a Pod. Each init container must succeed (exit 0) before the next one is started. Once all init containers complete, the regular containers start simultaneously.
+
+They are configured similarly to other containers but are placed in the initContainers section of the Pod spec.
+
+If any init container fails, the entire Pod is restarted and all init containers are rerun from the beginning.
+
+✅ Using Init Containers
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  initContainers:
+    - name: init-myservice
+      image: busybox:1.31
+      command: ["sh", "-c", "until nslookup myservice; do echo waiting for myservice; sleep 2; done;"]
+    - name: init-mydb
+      image: busybox:1.31
+      command: ["sh", "-c", "until nslookup mydb; do echo waiting for mydb; sleep 2; done;"]
+  containers:
+    - name: myapp-container
+      image: busybox:1.28
+      command: ["sh", "-c", "echo The app is running! && sleep 3600"]
+Native Sidecar Containers (Kubernetes 1.33+)
+Starting with Kubernetes v1.33, sidecar containers are natively supported. This allows sidecar containers to follow a defined lifecycle relative to the main containers in the Pod — without requiring entrypoint hacks.
+
+✳️ How Native Sidecars Work
+Declared using the restartPolicy: Always field inside the initContainers block.
+Kubernetes treats such containers as sidecars, ensuring they:
+Start before main containers.
+Run alongside them.
+Shut down after the main containers complete.
+✅ Example: Native Sidecar Configuration
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sidecar-example
+spec:
+  initContainers:
+    - name: sidecar-logger
+      image: busybox:1.31
+      restartPolicy: Always
+      command: ["sh", "-c", "while true; do echo Sidecar running; sleep 10; done"]
+  containers:
+    - name: main-app
+      image: busybox:1.31
+      command: ["sh", "-c", "echo Main app starting; sleep 60"]
+In this setup:
+
+The sidecar-logger container behaves like a sidecar, though declared in initContainers.
+It uses restartPolicy: Always to stay alive throughout the Pod lifecycle.
+Kubernetes starts the sidecar first, waits for readiness, then starts the main app.
+
+
+alias k=kubectl
+export do="--dry-run=client -o yaml" # Potem używasz: k run nginx --image=nginx $do > pod.yaml
+
+Konteksty (Contexts): ZAWSZE sprawdzaj, na jakim klastrze pracujesz. Polecenie zmiany kontekstu masz podane na początku każdego zadania. Jeśli zrobisz świetny backup etcd, ale na złym klastrze – dostaniesz 0 punktów.
+
+Wyszukiwarka w dokumentacji: Nie szukaj na ślepo. Używaj skrótów klawiszowych (np. /ingress w wyszukiwarce na kubernetes.io), aby błyskawicznie znaleźć gotowy fragment YAML-a do skopiowania.
+
+initContainers:
+  - command:
+    - sh
+    - -c
+    - sleep 600
+    image: busybox:1.28
+    imagePullPolicy: IfNotPresent
+    name: warm-up-1
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-6nc99
+      readOnly: true
+	  
+
+Kubernetes supports self-healing applications through ReplicaSets and Replication Controllers. The replication controller helps ensure that a POD is re-created automatically when the application within the POD crashes. It helps in ensuring enough replicas of the application are running at all times.
+
+Kubernetes provides additional support to check the health of applications running within PODs and take necessary actions through Liveness and Readiness Probes. However, these are not required for the CKA exam and as such, they are not covered here. These are topics for the Certified Kubernetes Application Developers (CKAD) exam and are covered in the CKAD course.	  
+
+
+########## Autoscaling #####
+in case of cluster:
+horizontal scaling - more nodes in cluster
+vertical scaling - increasing resources on existing nodes in the cluster. 
+
+in case of scaling workloads:
+horizontal scaling - creating more pods
+vertical scaling - increasing th resources allocalted to existing pods.
+
+manual way of scaling:
+	horizontal scaling cluster infra: manual provide pods and then use $ kubeadm join command to add new nodes to the cluster. In case of vertical scaling it requires to take down server, add more resources ...
+	horizontal scaling Workloads: in case of workloads it would be to run $ kubectl scale command. 
+	Vertical scaling Workloads: to manually scale workloads associated to pods run $ kubectl edit command.
+auto way of scaling:
+	horizontal scaling cluster infra: Kubernetes cluster autoscaler
+	horizontal scalind workloads: Horizontal Pod Autoscaler (HPA)
+	vertical scaling the workloads: Vertical Pod Autoscaler (VPA)
+
+przydatne komendy: 
+$ kubectl top pod my-app-pod  //informuje o: NAZWA  | CPU | MEMORY usage
+$ kubectl scale deployment my-app --replicas=3	 // manual scale
+The kubectl scale command can be used to scale both deployments and statefulsets. When scaling a statefulset, Kubernetes ensures that the state and order of the pods are maintained, unlike in deployments where pods can be created and destroyed in any order.
+When you scale a deployment to a higher number of replicas than the cluster can support due to resource constraints, Kubernetes will create as many replicas as possible within the available resources. The remaining replicas will be in a pending state until sufficient resources are freed up or added to the cluster. This behavior allows Kubernetes to manage resources dynamically while maintaining the desired state as closely as possible.
+
+$ kubectl autoscale deployment my-app --cpu=50% --min=1 --max=10     //auto scaler
+$ kubectl get hpa  // view status of created Horizontal Pod Autoscaler (HPA)
+$ kubectl delete hpa my-app // deleting HPA
+$ kubectl events hpa nginx-deployment | grep -i "FailedGetResourceMetric"    / bardzo wazna komenda pozwalajaca wylistowac i wyluskac zdarzenia
+
+Declarative approach to HPA:
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+		
+
+HPA depends on internal Metrics Server but can also use external source such as DATADOG or dynatrace (via external adapter) (Kubernetes autoscaling course needed).
+
+What is Skooner ???
+
+kubectl autoscale deployment nginx-deployment --max=3 --cpu=80%
+
+kubectl get hpa --watch
+
+# In-Place Pod Resizing #
+by default any changes to resource definition pod cause Pod removing and new pod with new resource definition created. It can be problem for stateful workloads, There is an improvements v1.27 called in place update of POD resources:
+$ FEATURE_GATES=InPlacePodVerticalScaling=true  //once it is enabled, pod definition supports a set of resize policy parameters:
+resizePolicy:
+- resourceName: cpu
+  restartPolicy: NotRequired
+- resourceName: memory
+  restartPolicy: RestartContainer  
+
+limitations: works only for CPU and memory resources, Pod QoS Class cannot be changed, Init containers and Ephemeral Containers cannot be resized, Resource requests and limits cannot be removed once set, Windows pods cannot be resized.   
+
+###### Vertical pod autoscaling #########
+
+# manual:
+
+$ kubectl top pod my-app-pod 
+$ kubectl edit deployment my-app  // a nastepnie zmieniasz resources.cpu i resources.limits:
+
+resources:
+  requests:
+    cpu: "250m"
+  limits:
+   cpu: "500m"
+
+# Vertical Pod Autoscaler:
+*** VPA does not come built-in!!!
+
+instalujesz poprzez:
+
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/vpa-release-1.0/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml
+
+$ kubectl get pods -n kube-system | grep vpa 
+
+VPA Recommender - (collects information) monitoring resource usage from metrics API, and provides recomendations
+VPA Updater - (monitors monitos or gets info from recommender, compares that to actual pod, if the pod is beyond spec, it kills the pod)  detects pods that running with suboptimal resources and evicts then an update is needed. When pod needs update it envicts it  
+VPA Admission Controller - intervenes the pod creation process and uses the recomendations from the recommender process and uses te recomendations from the recommender again to then mutate pot spec to apply CPU and memory values at startup. 
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+	kind: Deployment
+	name: my-app
+  resourcePolicy:
+    containerPolicies:
+	  - containerName: "my-app"
+	  contarolledResources: ["cpu"]
