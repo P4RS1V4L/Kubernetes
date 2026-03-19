@@ -1265,5 +1265,63 @@ Strategy #1: first upgrade all of them (no access to app).
 Strategy #2: one node per time.
 Strategy #3: new node to the cluster, new node with new, higher software and remove old nodes with old version.
 
-1. upgrade kubeadm itself: apt-get upgrade -y kubeadm=1.12.0-00
-2. kubeadm upgrade apply v1.12.0 
+1. upgrade kubeadm itself: 
+   $ apt-get upgrade -y kubeadm=1.12.0-00
+2. $ kubeadm upgrade apply v1.12.0 
+   $ kubectl get nodes //showing also version of each node.
+3. apt-get upgrade -y kubelet=1.12.0-00
+4. systemctl restart kubelet
+   $ kubectl get nodes // to confirm new version available on master node and the fact that worker nodes still needs to be updated as following:
+Worker nodes upgrade (remember to "ssh <your_workernode>"):
+1. move workloads to other nodes:
+   $ kubectl drain node-1
+2. $ apt-get upgrade -y kubeadm=1.12.0-00
+3. $ apt-get upgrade -y kubelet=1.12.0-00
+4. $ kubeadm upgrade node config --kubelet-verson v1.12.0
+5. $ system restart kubelet 
+6. $ kubectl uncordon node-1 
+7. $ kubectl drain node-2
+8. $ kubectl uncordon node-2
+9. $ kubectl drain node-3
+10. $ kubectl uncordon node-3
+
+cat /etc/*release* //info about distribution we are using.
+
+demo: https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+1. $ echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+2. $ curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+3. $ sudo apt update
+4. $ sudo apt-cache madison kubeadm // gives info which precisely version is available to be installed
+5. upgrading control plane node:
+6. Upgrade kubeadm:
+	# replace x in 1.35.x-* with the latest patch version
+	$ sudo apt-mark unhold kubeadm && \
+	$ sudo apt-get update && sudo apt-get install -y kubeadm='1.35.x-*' && \
+	$ sudo apt-mark hold kubeadm
+7. $ sudo kubeadm upgrade plan //you will see which version each component has (apiserver, cnotroller-manager, scheduler, proxy, CoreDNS, etcd)
+8. $ sudo kubeadm upgrade apply v1.35.x
+9. $ kubectl get node
+10.$ kubectl drain controlplane --ignore-daemonsets
+11.$ sudo apt-mark unhold kubelet kubectl && \
+$ sudo apt-get update && sudo apt-get install -y kubelet='1.35.x-*' kubectl='1.35.x-*' && \
+$ sudo apt-mark hold kubelet kubectl
+12.$ sudo systemctl daemon-reload
+$ sudo systemctl restart kubelet
+13.$ kubectl get node
+14.$ kubectl uncordon controlplane
+15.$ kubectl get node
+
+# Upgrade worker nodes #
+1. $ sudo apt-mark unhold kubeadm && \
+sudo apt-get update && sudo apt-get install -y kubeadm='1.35.x-*' && \
+sudo apt-mark hold kubeadm
+2. $ sudo kubeadm upgrade node
+3. $ kubectl drain node01 --ignore-daemonsets
+4. $ sudo apt-mark unhold kubelet kubectl && \
+sudo apt-get update && sudo apt-get install -y kubelet='1.35.x-*' kubectl='1.35.x-*' && \
+sudo apt-mark hold kubelet kubectl
+5. $ sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+6. $ kubectl uncordon node01
+7. $ kubectl get node
+and so on for other nodes...
