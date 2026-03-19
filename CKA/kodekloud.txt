@@ -1325,3 +1325,79 @@ sudo systemctl restart kubelet
 6. $ kubectl uncordon node01
 7. $ kubectl get node
 and so on for other nodes...
+
+
+#### backup and Restore Methods ####
+Backup candidates: 
+- Resource Configuration
+$ kubectl create namespace new-namespace
+or
+$ kubectl create secret
+or
+$ kubectl create configmap
+or
+declarative approach via yaml file which has to have backup
+or
+$ kubectl get all --all-namespaces -o yaml > all-deploy-services.yaml
+Currently there are tools such as Velero (former Ark) that can do this for you.
+- etcd Cluster ($ etcdctl version)
+etcd is hosted on master node:
+$ etcd.service  //gives info about --data.dir=/var/lib/etcd   which may be used as backup
+$ etcdctl \
+	snapshot save snahshot.db    /save a snapshot of the database
+$ etcdctl \
+	snapshot status snapshot.db
+	Restore process:
+	1. stop th QAPI server: $ systemctl stop kube-apiserver
+	2. etcdctl \
+	   snapshot restore snapshot.db \
+       --data-dir /var/lip/etcd-from-backup
+	3. configure etcd.service to use new backup directory: --data.dir=/var/lib/etcd
+	4. reload service deamon: $ systemctl daemon-reload
+	5. restart etcd service: $ systemctl restart etcd
+	6. start kube api server: $ systemctl start kube-apiserver
+- Persistent Volumes
+
+What is the version of ETCD running on the cluster?
+$ kubectl describe pod etcd-controlplane  -n kube-system
+etcd snapshot save demo:
+etcdctl --endpoints=https://[127.0.0.1]:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot save /opt/snapshot-pre-boot.db
+
+etcd snapshot restore demo:
+1. $ mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/
+sleep 30
+2. $ etcdutl snapshot restore /opt/snapshot-pre-boot.db --data-dir /var/lib/etcd-from-backup
+3. Update the etcd configuration: $ vi /etc/kubernetes/manifests/etcd.yaml
+- hostPath:
+      path: /var/lib/etcd                    # OLD directory
+- hostPath:
+      path: /var/lib/etcd-from-backup        # NEW restored directory
+4. Move the kube-apiserver manifest back to its original location:
+mv /tmp/kube-apiserver.yaml /etc/kubernetes/manifests/
+5. Restart other control plane components
+# Restart kube-controller-manager
+mv /etc/kubernetes/manifests/kube-controller-manager.yaml /tmp/
+sleep 20
+mv /tmp/kube-controller-manager.yaml /etc/kubernetes/manifests/
+# Restart kube-scheduler
+mv /etc/kubernetes/manifests/kube-scheduler.yaml /tmp/
+sleep 20
+mv /tmp/kube-scheduler.yaml /etc/kubernetes/manifests/
+# Restart kubelet
+systemctl restart kubelet
+6: Monitor the restart process
+watch crictl ps
+7: Verify the restore
+# Check all resources across all namespaces
+kubectl get deployments,services --all-namespaces
+
+# Verify specific resources if needed
+kubectl get pods --all-namespaces
+kubectl get nodes
+
+
+##### SECURITY  #####
