@@ -1227,7 +1227,43 @@ You should see two pods (or more) in a Running state.
 4. Verify VPA operation:
 
 kubectl describe vpa flask-app
-
 This will show the current state of the VPA and any recommendations it has made. If it's working properly, you should see resource recommendations (for CPU and memory) in the output.
-
 With 2 replicas, Kubernetes can safely remove one pod while keeping your application running, allowing VPA to work properly.
+
+##### Cluster Maintenace ####
+Operating System Upgrade.
+Pod eviction timeout - means how much time Pod can be off before actions are taken. Variable: tolerationSeconds: 3600
+
+$ kubectl drain node-1 // drain node of all workloads, so it will be moved to other nodes in the cluster. Pods are terminated and recreated on another. The node is also marked sa unscheduled so no pods can be scheduled on it.
+Now when pods are safe on other pods you can reboot the first node. When it is back online it is still unscheduled so you need to uncoordinated it:
+$ kubectl uncordon node-1
+cordon simply marks a node unschedulable:
+$ kubectl cordon node-2
+
+$ kubectl get nodes
+
+Which nodes are the applications hosted on?
+$ kubectl get pods -o wide
+
+We need to take node01 out for maintenance. Empty the node of all applications and mark it unschedulable
+$ kubectl drain node01 //gives error: "cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore): kube-flannel/kube-flannel-ds-b5p9x, kube-system/kube-proxy-zqrmc", use following:
+$ kubectl drain node01 --ignore-daemonsets
+
+why did drain command fail on node01? It worked the first time! You cannot deleete Pods not managed by ReplicationController, ReplicaSt, Job, DaemonSet or StatefulSet.
+
+### Cluster Ugrade Introduction ###
+components cannot have higher version than kube-apiserver. Lower is possible but not higher than the one which kube-apiserver has.
+Metehod #1:
+$ kubeadm upgrade plan
+$ kubeadm upgrade apply 
+
+Method #2:
+the hard way - manually update of each component.
+
+Strategies via kubeadm:
+Strategy #1: first upgrade all of them (no access to app).
+Strategy #2: one node per time.
+Strategy #3: new node to the cluster, new node with new, higher software and remove old nodes with old version.
+
+1. upgrade kubeadm itself: apt-get upgrade -y kubeadm=1.12.0-00
+2. kubeadm upgrade apply v1.12.0 
