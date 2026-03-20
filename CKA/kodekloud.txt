@@ -1400,4 +1400,34 @@ kubectl get pods --all-namespaces
 kubectl get nodes
 
 
+
 ##### SECURITY  #####
+
+### Security Primitives
+Secure Hosts: root acces disabled, password based auth disabled, only SSH based auth available.
+
+## Who can access?
+Static Token Files, Certificates, External Auth providers-LDAP, Service Accounts
+Admins, Developers, Bots (Service Accounts)
+K8s does not manage users itself but manage service accounts:
+$ kubectl create serviceaccount sa1
+$ kubectl get serviceaccount
+
+kube-apiserver - authenticates user access by:
+- Static Token File, (clear text so NOT recommended)
+	kube-apiserver <= --token-auth-file=user-token-details.csv
+	$ curl -v -k https://master-node-ip:6443/api/v1/pods --headeer "Authorization: Bearer Kusndfidasdfrlk"
+- Certificates,
+  TLS Certificates:
+
+- Identity Services (LDAP, Kerberos, OAuth2, SAML, etc.)
+
+
+
+
+What can do?
+RBAC Authentication(especially for new users), Node Authorization, ABAC Authorizzation, Webhook Mode
+
+TLS Certificates must be active kube-apiserver connecting with: etcd Cluster, Kubelet, Kube-proxy, kube-scheduler, Kube Controller-Manager.
+
+Communication between applications within cluster: restriction via network policy.
