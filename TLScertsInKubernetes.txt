@@ -157,7 +157,7 @@ View Certificates in existing cluster.
     https://github.com/mmumshad/kubernetes-the-hard-way/blob/master/tools/kubernetes-certs-checker.xlsx
     
  5. Inspect service Logs:
-    $ journalctl -u etcd.service -1
+    $ journalctl -u etcd.service -l
     $ kubectl logs etcd-master
     If core components such as kubernetes API server, or etcd server are down, go one level down to get Docker logs:
     $ crictl ps -a
@@ -165,5 +165,48 @@ View Certificates in existing cluster.
     $ crictl logs <containerID> 
  7.   
   
-    
-     
+ Q&A:
+$ cat /etc/kubernetes/manifests/kube-apiserver.yaml
+Identify the certificate file used for the kube-api server.
+   --tls-cert-file=/etc/kubernetes/pki/apiserver.crt
+Identify the Certificate file used to authenticate kube-apiserver as a client to ETCD Server.
+   --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt
+Identify the key used to authenticate kubeapi-server to the kubelet server.
+  --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
+Identify the ETCD Server Certificate used to host ETCD server.
+  $ cat /etc/kubernetes/manifests/etcd.yaml
+  --cert-file=/etc/kubernetes/pki/etcd/server.crt
+Identify the ETCD Server CA Root Certificate used to serve ETCD Server.
+  ETCD can have its own CA. So this may be a different CA certificate than the one used by kube-api server.
+  --trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+What is the Common Name (CN) configured on the Kube API Server Certificate?
+  OpenSSL Syntax: openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text
+  Subject: CN = kube-apiserver
+Which of the below alternate names is NOT configured on the Kube API Server Certificate?
+  Run the command openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text and look at Alternative Names.
+What is the Common Name (CN) configured on the ETCD Server certificate?
+  Run the command openssl x509 -in /etc/kubernetes/pki/etcd/server.crt -text and look for Subject CN.
+How long, from the issued date, is the Kube-API Server Certificate valid for?
+  File: /etc/kubernetes/pki/apiserver.crt
+How long, from the issued date, is the Root CA Certificate valid for?
+  File: /etc/kubernetes/pki/ca.crt
+Kubectl suddenly stops responding to your commands. Check it out! Someone recently modified the /etc/kubernetes/manifests/etcd.yaml file
+You are asked to investigate and fix the issue. Once you fix the issue wait for sometime for kubectl to respond. Check the logs of the ETCD container.
+  Inspect the --cert-file option in the manifests file.
+  cat /etc/kubernetes/manifests/etcd.yaml
+  The certificate file used here is incorrect. It is set to /etc/kubernetes/pki/etcd/server-certificate.crt which does not exist. As we saw in the previous questions the correct path should be     /etc/kubernetes/pki/etcd/server.crt.
+
+  root@controlplane:~# ls -l /etc/kubernetes/pki/etcd/server* | grep .crt
+  -rw-r--r-- 1 root root 1188 May 20 00:41 /etc/kubernetes/pki/etcd/server.crt
+  root@controlplane:~#
+
+The kube-api server stopped again! Check it out. Inspect the kube-api server logs and identify the root cause and fix the issue.
+Run crictl ps -a command to identify the kube-api server container. Run crictl logs container-id command to view the logs.
+  If we inspect the kube-apiserver container on the controlplane, we can see that it is frequently exiting.
+root@controlplane:~# crictl ps -a | grep kube-apiserver
+1fb242055cff8       529072250ccc6       About a minute ago   Exited              kube-apiserver            3                   ed2174865a416       kube-apiserver-controlplane
+  If we now inspect the logs of this exited container, we would see the following errors:
+root@controlplane:~# crictl logs --tail=2 1fb242055cff8  
+W0916 14:19:44.771920       1 clientconn.go:1331] [core] grpc: addrConn.createTransport failed to connect to {127.0.0.1:2379 127.0.0.1 <nil> 0 <nil>}. Err: connection error: desc = "transport: authentication handshake failed: x509: certificate signed by unknown authority". Reconnecting...
+E0916 14:19:48.689303       1 run.go:74] "command failed" err="context deadline exceeded"
+  This indicates an issue with the ETCD CA certificate used by the kube-apiserver. Correct it to use the file /etc/kubernetes/pki/etcd/ca.crt.
