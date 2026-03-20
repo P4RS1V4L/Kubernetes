@@ -1,0 +1,169 @@
+Symmetric Encryption:
+same key exchanged between sender and receiver, used to encrypt and decrypt data. Risky method
+To safely deliver symetric key from client to server is used Asymetric Encryption.
+$ openssl genrsa -out my-bank.key 11024
+$ openssl rsa -in my-bank.key -pubout > mybank.pem
+
+
+Asymetric Encryption:
+pair of keys private(-key, .key) and public (pem, crt).
+
+User -         $ ssh-keygen
+Web Server -   $ cat ~/.ssh/authorized_keys
+
+$ openssl req -new -key my-bank.key -out my-bank.csr -subj "/C=US/ST=CA/O=myOrg, Inc./CN=my-bank.com"
+
+Server Certificates - configured on servers
+  kube-apiserver     (apiserver.crt, apiserver.key)
+  etcd server        (etcd-x-server.crt, etcd-x-server.key)
+  kubelet server     (kubelet.crt, kubelet.key)
+
+Client Certificates - used by user to verify themselves
+Client components which connecting to kube-apiserver:
+  Admin            (admin.crt, admin.key)
+  kube-scheduler   (scheduler.crt, scheduler.key)
+  Kube controller-manager  (controller-manager.crt, controller-manager.key)
+  Kube-proxy       (kube-proxy.crt, kubel-proxy.key)
+Other componets which connecting to kube-apiserver and certificates which they use:
+  etcd server      (apiserver-etcd-client.crt, apiserver-etcd-client.key)
+  kubelet server   (apiserver-kubelet-client.crt, apiserver-kubelet-client.crt)
+                   (kubelet-client.crt, kubelet-client.key)
+Certificates have to be signed by Certificate Authority
+
+Root Certificates - used to sign Server Certificates
+
+Certificate Creation for cluster (easyRSA, OPENSSL)
+  generation ca.key:
+  $ openssl genrsa -out ca.key 2048
+  output: ca.key
+
+  certificate Signing Request:
+  $ openssl req -new -key  ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr
+  output: ca.csr
+
+  Sign Certificates
+  $ openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt
+  output: ca.crt
+
+Admin User
+   generation ca.key:
+   $ openssl genrsa -out admin.key 2048
+   output: admin.key
+
+   certificate Signing Request:
+   $ openssl req -new -key  admin.key -subj "/CN=kube-admin/OU=system:masters" -out admin.csr
+   output: admin.csr
+
+   Sign Certificates
+   $ openssl x509 -req -in admin.csr -CA ca.crt -CAkey ca.key -out admin.crt
+   output: admin.crt
+
+ Same process for: Client Certificates and other components that access the kubeAPI server:
+   - kube_scheduler as part of system has to be prefixed by SYSTEM:KUBE_SCHEDULER
+   - same with Kube Controller Manager - SYSTEM:KUBE-CONTROLLER-MANAGER
+   - kube-proxy (SYSTEM: prefix not needed)
+
+  Next you can provide certificates as parameters:
+    $ curl https://kube-apiserver:6443/api/v1/pods \
+        --key admin.key --cert admin.crt
+        --cacert ca.crt
+  ... or move all of these parameters into a configuration file kube-config.yaml
+  apiVersion: v1
+  clusters:
+  - cluster:
+      certificate-authority: ca.crt
+      server: https://kube-apiserver:6443
+    name: kubernetes
+  kind: Config
+  users:
+  - name: kubernetes-admin
+    user:
+      client-certificate: admin.crt
+      celint-key: admin.key
+
+ Server side certificates:
+
+   etcd Server: etcdserver.crt, etcdserver.key, etcdpeer1.crt (in case high availability where etcd is deployed as cluster across multiple servers) Check etcd.yaml:
+     -> etcd peer (etcdpeer1.crt, etcdpeer1.key)
+     -> etcd peer (etcdpeer2.crt, etcdpeer2.key)  
+     
+   Kube-api Server: apiserver.crt, apiserver.key (every talk to api server):
+     $ openssl genrsa -out apiserver.key 2048
+     output: apiserver.key
+
+   Certificate Signing Request:
+     $ openssl req -new -key  apiserver.key -subj "/CN=kube-apiserver" -out apiserver.csr -config openssl.cnf
+     output: apiserver.csr
+
+
+   How specify alternate names?
+   For that you must create open SSL config file: openssl.cnf and pass this config file as the option while creating apiserver.csr (the above Certificate Signing Request)
+   ```
+   [req]
+   req_extensions = v3_req
+   distinguished_name = req_distnguished_name
+   [ v3_req ]
+   basicConstraints = CA:FLASE
+   keyUsage = nonRepudiation,
+   subjectAltName = @alt
+   [alt_names]
+   DNS.1 = kubernetes
+   DNS.2 = kubernetes.default
+   DNS.3 = kubernetes.default.svc
+   DNS.4 = kubernetes.default.svc.local
+   IP.1 = 10.96.0.1
+   IP.2 = 172.17.0.87
+   ```
+   Sign Certificates
+     $ openssl x509 -req -in apiserver.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out apiserver.crt -extensions v3_req -extfile openssl.cnf -days 1000
+     output: apiserver.crt 
+   next pass certificates to kubeAPI servers executables: https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+
+   Kubelet server: (kubelet.crt, kubelet.key). Certificates will be named afer their nodes: node01, node02, node03. Once certificates will be create use them in kubelet-config.yaml
+   Must be done for each node in the cluster.
+```
+     kind: kubeletConfiguration
+     apiVersion: Kubelet.config.k8s.io/v1beta1
+     authentication:
+       x509:
+         clientCAFile: "/var/lib/kubernetes/ca.pem"
+     authorization:
+       mode: Webhook
+     clusterDomain: 'cluster.local"
+     clusterDNS:
+       - "10.32.0.10"
+     podCIDR: "${POD_CIDR}"
+     resolvConf: "/run/systemd/resolve/resolve.conf"
+     runtimeRequestTimeout: "15m"
+     tlsCertFile: "/var/lib/kubelet/kubelet-node01.crt"
+     tlsPrivateKeyFile: "/var/lib/kubelet/kubelet-node01.key"
+```
+  Kubectl Nodes (Client Certificates) kubelet-client.crt, kubelet-client.key . Certificates will be named as following (node keyword) system:node.node01, system:node.node02, system:node.node03.
+  After creating certs, add them to kube-config file.
+
+###########
+View Certificates in existing cluster.
+ As admin perform healthcheck: 
+ 1. How the cluster was setup? 
+  If you setup cluster from scrach, you generate certificates by yourself,
+    $ cat /etc/systemd/system/kube-apiserver.service
+  ... or auto way:
+    $ cat /etc/kubernetes/manifests/kube-apiserver.yaml
+    Above file will give you info about used certificates.
+ 3. Run the openssl s509 command and provide certificate file as input to decode the certificate and view details:
+    $ openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout
+    Check cert name under Subject: and alternate names the cube (kubeAPI has many so all of them must be there), Validity date, and issuer.
+    See excel table with details:
+    https://github.com/mmumshad/kubernetes-the-hard-way/blob/master/tools/kubernetes-certs-checker.xlsx
+    
+ 5. Inspect service Logs:
+    $ journalctl -u etcd.service -1
+    $ kubectl logs etcd-master
+    If core components such as kubernetes API server, or etcd server are down, go one level down to get Docker logs:
+    $ crictl ps -a
+    and
+    $ crictl logs <containerID> 
+ 7.   
+  
+    
+     
