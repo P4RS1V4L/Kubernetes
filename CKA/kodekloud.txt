@@ -1518,10 +1518,12 @@ users:
 
 $ kubectl config view
 or
-$ kubectl config view -kubeconfig=my-custom-config
+$ kubectl config view --kubeconfig=my-custom-config
 
 Editing the file:
 to change current-context use: $ kubectl config use-context prod-user@production
+kubectl config --kubeconfig=/root/my-kube-config use-context research
+kubectl config --kubeconfig=/root/my-kube-config current-context
 more comments are available under $ kubectl config -h
 
 ## Namespaces:
