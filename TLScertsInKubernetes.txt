@@ -51,7 +51,7 @@ Admin User
    output: admin.key
 
    certificate Signing Request:
-   $ openssl req -new -key  admin.key -subj "/CN=kube-admin/OU=system:masters" -out admin.csr
+   $ openssl req -new -key  admin.key -subj "/CN=kube-admin/OU=system:masters" -out admin.csr   // 'OU=' it's a group paramenter
    output: admin.csr
 
    Sign Certificates
