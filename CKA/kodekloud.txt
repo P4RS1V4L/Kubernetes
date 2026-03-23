@@ -1474,3 +1474,54 @@ pay attention on ca.crt and ca.key available in kube-cntroller-manager.yaml file
 			- --address=127.0.0.1
 			- --cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt
 			- --cluster-signing-key-file=/etc/kubernetes/pki/ca/key
+
+###### Security KubeConfig  ######
+$ curl https://my-kube-playground:6443/api/v1/pods \
+	--key admin.key
+	--cert admin.crt
+	--cacert ca.crt
+or
+$ kubectl get pods
+	--server my-kube-playground:6443
+	--client-key admin.key
+	--client-certificate admin.crt
+	--certificate-authority ca.crt
+to do not provide everytime above data, move it to kubeconfig:
+$ kubectl get pods
+	--kubeconfig config
+
+KubeConfig File contains:
+- Clusters (Development, Production, Google, MyKubePlayground)
+- Contexts (Admin@Production, Dev@Google, MyKubeAdmin@MyKubePlayground) => cluster+users
+- Users (Admin, DEv User, Prod User, MyKubeAdmin)
+Yaml file:
+
+apiVersion: v1
+kind: Config
+
+clusters:
+- name: my-kube-playground
+  cluster:
+    certificate-authority:ca.crt //use full path!
+	server: https://my-kube-playground:6443
+contexts:
+- name: my-kube-admin@my-kube-playground
+  context:
+	cluster: my-kube-playground
+    user: my-kube-admin
+	namespace: finance
+users:
+- name: my-kube-admin
+  user:
+	client-certificate: admin.crt //use full path!
+	client-key: admin.key //use full path!
+
+$ kubectl config view
+or
+$ kubectl config view -kubeconfig=my-custom-config
+
+Editing the file:
+to change current-context use: $ kubectl config use-context prod-user@production
+more comments are available under $ kubectl config -h
+
+## Namespaces:
