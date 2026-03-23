@@ -207,6 +207,17 @@ root@controlplane:~# crictl ps -a | grep kube-apiserver
 1fb242055cff8       529072250ccc6       About a minute ago   Exited              kube-apiserver            3                   ed2174865a416       kube-apiserver-controlplane
   If we now inspect the logs of this exited container, we would see the following errors:
 root@controlplane:~# crictl logs --tail=2 1fb242055cff8  
+   
 W0916 14:19:44.771920       1 clientconn.go:1331] [core] grpc: addrConn.createTransport failed to connect to {127.0.0.1:2379 127.0.0.1 <nil> 0 <nil>}. Err: connection error: desc = "transport: authentication handshake failed: x509: certificate signed by unknown authority". Reconnecting...
 E0916 14:19:48.689303       1 run.go:74] "command failed" err="context deadline exceeded"
   This indicates an issue with the ETCD CA certificate used by the kube-apiserver. Correct it to use the file /etc/kubernetes/pki/etcd/ca.crt.
+
+$ kubeadm certs check-expiration
+
+Filename                       |       K8s component      |      Role
+apiserver.crt                  |        API Server        | API server main certificate
+apiserver-kubelet-client.crt   |  API Server -> Kubelet   | Used by API Server to 'talk' with kubelet 
+etcd/server.crt                |    etcd                  | used in communcation with etcd database
+etcd/peer.crt                  |    etcd                  | cert used in communication between etcd nodes
+ca.crt                         |    Root CA               | main certificate (sing other certificates)
+front-proxy.ca.crt             |  Front Proxy             | Used by the API aggregator.
