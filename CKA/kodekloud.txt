@@ -1418,12 +1418,9 @@ kube-apiserver - authenticates user access by:
 	kube-apiserver <= --token-auth-file=user-token-details.csv
 	$ curl -v -k https://master-node-ip:6443/api/v1/pods --headeer "Authorization: Bearer Kusndfidasdfrlk"
 - Certificates,
-  TLS Certificates:
+  TLS Certificates: https://github.com/P4RS1V4L/Kubernetes/blob/main/TLScertsInKubernetes.txt
 
 - Identity Services (LDAP, Kerberos, OAuth2, SAML, etc.)
-
-
-
 
 What can do?
 RBAC Authentication(especially for new users), Node Authorization, ABAC Authorizzation, Webhook Mode
@@ -1431,3 +1428,49 @@ RBAC Authentication(especially for new users), Node Authorization, ABAC Authoriz
 TLS Certificates must be active kube-apiserver connecting with: etcd Cluster, Kubelet, Kube-proxy, kube-scheduler, Kube Controller-Manager.
 
 Communication between applications within cluster: restriction via network policy.
+
+
+###### Certificates API #########
+As Admin i have own certificate and key.
+When new Admin comes into my team, needs pair of certificates and keys, sends to you as Admin so you can take the certificate signing request to CA (Certificate Authority) server. The certificate will be signed by CA server's private key and root certificate.
+Certificates are placed on the K8s master node itself, so the master node is our CA server.
+In case of more users certificate API comes with help.
+a. Create CertificateSigningRequest Object
+b. Review Request
+c. Approve Request,
+d. Share Certs to user
+
+1. User creates key: $ openssl genrsa -out jane.key 2048
+2. then generates a certificates signing request: $ openssl req -new -key jane.key -subj "/CN=jane" -out jane.csr
+3. then sends the request to the administrator.
+4. The administrator takes the key and creates a certificate signing request object:
+---
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: jane
+spec:
+  groups:
+  - system: authenticated
+  request: <Paste the base64 encoded value of the CSR file>  # $ cat jane.csr | base64 -w 0
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - client auth
+
+5. and submit the request. $ kubectl apply -f jane-csr.yaml Once the object is created, certificate signing requests can be seen by Admins by using: $ kubectl get csr
+7. Approve request: $ kubectl certificate approve jane  or   $ kubectl certificate deny agent-smith
+8. The the certificate can be extracted and shared with user.
+9. The certificate can be displayed by: $ kubectl get csr jane -o yaml
+10. Decoding the certificate, then the cert can be shared with the user: $ echo "LS0..Qo=" | base64 --decode   
+
+
+Controller-Manager responsibe for: CSR_APPROVING, CSR_SIGNING
+pay attention on ca.crt and ca.key available in kube-cntroller-manager.yaml file:
+	$ cat /etc/kubernetes/manifests/kube-controller-manager.yaml
+		spec:
+		  containers:
+		  - command:
+			- kube-controller-mananger
+			- --address=127.0.0.1
+			- --cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt
+			- --cluster-signing-key-file=/etc/kubernetes/pki/ca/key
