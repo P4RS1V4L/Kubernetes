@@ -1526,4 +1526,76 @@ kubectl config --kubeconfig=/root/my-kube-config use-context research
 kubectl config --kubeconfig=/root/my-kube-config current-context
 more comments are available under $ kubectl config -h
 
-## Namespaces:
+###### API Groups #####
+
+$ curl https://kube-master:6443/version
+$ curl https://kube-master:6443/api/v1/pods
+
+/metrics /healthz /version /api /apiis /logs  etc...
+
+Cluster functionality responsible api:
+- Core group
+- Named group
+
+$ curl https://localhost:6443 -k //to see API groups
+$ curl https://localhost:6443/apis -k | grep "name"   // to see resource groups
+
+$ kubectl proxy // helps to access the cluster without providing cert details as variables
+next:
+$ curl https://localhost:8001 -k  //gives you wide scope on API (not only version)
+
+kubeproxy != kubectl proxy //are not the same
+
+#### Authorization ####
+Authorization Mechanisms: 
+- Node, only for Kubelets,authorizing API requests only to reduced resources,
+- ABAC, (Attribute-Based Access Control, user, resource, group)
+- RBAK, 
+- Webhook external tool used to authorize (ex. Open Policy Agent)
+Authorization Mode:
+
+ABAC - always allow by defaut
+RBAC - always deny by default
+
+## RBAC ###
+how we create role?
+developer-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: pod-reader
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods"]
+  verbs: ["get", "watch", "list", "update", "delete"]
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["ConfigMap"]
+  verbs: ["create"]
+
+$ kubectl create -f developer-role.yaml
+
+Next step is to link user to the roles: devuser-developer-binding.yaml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: devuser-developer-binding
+  namespace: default
+subjects:
+# You can specify more than one "subject"
+- kind: User
+  name: dev-user
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  # "roleRef" specifies the binding to a Role / ClusterRole
+  kind: Role #this must be Role or ClusterRole
+  name: developer # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
+
+$ kubectl create -f devuser-developer-binding.yaml
+
+$ kubectl get roles
+$ kubectl get rolebindings
+$ kubectl describe role developer
+
