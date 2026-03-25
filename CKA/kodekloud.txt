@@ -1563,13 +1563,13 @@ developer-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: developer
   namespace: default
-  name: pod-reader
 rules:
-- apiGroups: [""] # "" indicates the core API group
+- apiGroups: [""]
   resources: ["pods"]
-  verbs: ["get", "watch", "list", "update", "delete"]
-- apiGroups: [""] # "" indicates the core API group
+  verbs: ["list", "get", "create", "update", "delete"]
+- apiGroups: [""]
   resources: ["ConfigMap"]
   verbs: ["create"]
 
@@ -1598,4 +1598,23 @@ $ kubectl create -f devuser-developer-binding.yaml
 $ kubectl get roles
 $ kubectl get rolebindings
 $ kubectl describe role developer
+
+
+## RBAC ####
+
+develorper-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: developer
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list", "get", "create", "update", "delete"]
+- apiGroups: [""]
+  resources: ["ConfigMap"]
+  verbs: ["create"]
+
+$ kubectl create role -f developer-role.yaml
 
