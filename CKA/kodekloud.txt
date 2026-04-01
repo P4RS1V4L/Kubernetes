@@ -1618,3 +1618,113 @@ rules:
 
 $ kubectl create role -f developer-role.yaml
 
+Inspect the environment and identify the authorization modes configured on the cluster.
+Check the kube-apiserver settings.
+kubectl describe pod kube-apiserver-controlplane -n kube-system
+
+
+Create the necessary roles and role bindings required for the dev-user to create, list and delete pods in the default namespace.
+Use the given spec:
+
+Role: developer
+Role Resources: pods
+Role Actions: list
+Role Actions: create
+Role Actions: delete
+RoleBinding: dev-user-binding
+RoleBinding: Bound to dev-user
+
+$ kubectl create role developer --namespace=default --verb=list,create,delete --resource=pods
+$ kubectl create rolebinding dev-user-binding --namespace=default --role=developer --user=dev-user
+
+#### Cluster Roles ####
+Cluster Scoped resources are those where you dont specify namespaces 
+$ kubecl api-resources --namespaced=true // display resources with assigned namespaces
+$ kubectl api-resources --namespaced=false // to see full list of namespaced and non-namespaces resources.
+
+How to authorise non-authorise resources such as pods or persisten volumes? Here use Cluster Roles and cluster roles bindings.
+You can create Cluster Role for namespaced resources. In such situation Cluster Role user will have access accross all namespaces.
+
+$ kubectl get clusterroles --no-headers | wc -l
+$ kubectl get clusterroles --no-headers  -o json | jq '.items | length'
+$ kubectl get clusterrolebindings --no-headers  | wc -l
+
+What namespace is the cluster-admin clusterrole part of?
+ClusterRole is a non-namespaced resource. You can check via the kubectl api-resources --namespaced=false command.
+$ kubectl describe clusterrolebinding cluster-admin
+What level of permission does the cluster-admin role grant?
+$ kubectl describe clusterrole cluster-admin
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: storage-admin
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: michelle-storage-admin
+subjects:
+- kind: User
+  name: michelle
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: storage-admin
+  apiGroup: rbac.authorization.k8s.io
+
+#### Service Accounts ####
+Used by machines (Prometheus, Jenkins)
+$ kubectl get serviceaccount
+$ kubectl describe serviceaccount default
+$ kubectl describe pod my-kubernetes-dashboard // while pod is created, service account is attached.
+$ kubectl exec -it my-kuberrnetes-dashboard ls /var/run/secrets/kubernetes.io/serviceaccount
+  output: ca.crt  namespace token
+Custom Service Account:
+$ kubectl create serviceaccount dashboard-sa
+or
+service-definition.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dashboard-sa
+  namespace: default
+
+# Create Token
+$ kubectl create token dashboard-sa
+$ kubectl create token dashboard-sa --duration 2h
+
+## Image Securing ##
+images are stored Docker library (Docker official source of images)
+Private Repository with using private credentials: 
+$ docker login private-registry.io
+then
+$ docker run private-registry.io/apps/imtertnal-app  //the same path is provided in .yaml under spec.containers.image
+how to provide credentials to kubernetes?
+$ kubectl create secret docker-registry regcred \
+	--docker-server=
+	--docker-username=
+	--docker-password=
+	--docker-email=
+ Next define secret in pod definition file:
+imagePullSecrets:
+- name: regcred
+
+Create a secret object with the credentials required to access the registry.
+Name: private-reg-cred
+Username: dock_user
+Password: dock_password
+Server: myprivateregistry.com:5000
+Email: dock_user@myprivateregistry.com
+
+$ kubectl create secret docker-registry private-reg-cred --docker-username=dock_user --docker-password=dock_password --docker-server=myprivateregistry.com:5000 --docker-email=dock_user@myprivateregistry.com
+
+### Docker Security ###
