@@ -1728,3 +1728,27 @@ Email: dock_user@myprivateregistry.com
 $ kubectl create secret docker-registry private-reg-cred --docker-username=dock_user --docker-password=dock_password --docker-server=myprivateregistry.com:5000 --docker-email=dock_user@myprivateregistry.com
 
 ### Docker Security ###
+proces isolation (different ID)
+By default docker runs a container with reduced capabilities, and process in container does not have rights to do most tasks such as reboot and so on.
+$ docker run ubuntu
+If you wish avoid above behavior and override default priviliges use:
+$ docker run --cap-drop KILL ubuntu
+$ docker run -priviliged
+$ docker run --user=1001 ubuntu sleep 3600
+$ docker run -cap-add MAC_ADMIN ubuntu
+Containers are encapsulated in Pods!
+pod-definition.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pod
+spec:
+  containers:
+    - name: ubuntu
+      image: buntu
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsUser: 1000
+        capabilities:
+          add: ["MAC_ADMIN"]
