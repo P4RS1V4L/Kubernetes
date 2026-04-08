@@ -1752,3 +1752,168 @@ spec:
         runAsUser: 1000
         capabilities:
           add: ["MAC_ADMIN"]
+
+
+
+###### Network policies ########
+#### Network Security ####
+Allow Ingress traffic from API Pod on port 33006:
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+spec:
+  podSelector:
+    matchLabels:
+      role: db
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+  	    matchLabels:
+		  name: api-pod
+    ports:
+    - protocol: TCP
+      port: 3306
+
+### Developing Network Policies ###
+API Pod <=> DB Pod (3306)
+blocking everything what in and out from DB Pod (except 3306 port form API Pod). There is no separate rule for egress. If incomming traffic is allowed, then outgoing traffic is automatically set to true.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+spec:
+  podSelector:
+    matchLabels:
+      role: db   		
+  policyTypes:
+  - Ingress   // income traffic
+  - Egress    // outcome traffic
+  ingress
+  - from:
+    - podSelector:
+        matchLabels:	 // 1st selector
+          name: api-pod  
+      namespaceSelector: // 2nd selector, in case of Pods with different namespaces
+        matchLabels:
+		  kubernetes.io/metadata.name: pod
+    - ipBlock: 			// 3rd selector, allows define IP range from which traffic will be allowed.
+        cidr: 192.168.5.10/32
+    ports:
+    - protocol: TCP
+      port: 3306
+	egress:
+    - to:
+      - ipBlock:
+          cidr: 192.168.5.10/32
+      ports:
+      - protocol: TCP
+        port: 80
+
+Exercise:
+	Create a network policy to allow egress traffic from the Internal application only to the payroll-service and db-service.
+	Use the spec given below. You might want to enable ingress traffic to the pod to test your rules in the UI.
+	Also, ensure that you allow egress traffic to DNS ports TCP and UDP (port 53) to enable DNS resolution from the internal pod.
+	
+	Policy Name: internal-policy
+	Policy Type: Egress
+	Egress Allow: payroll
+	Payroll Port: 8080
+	Egress Allow: mysql
+	MySQL Port: 3306
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      name: internal
+  policyTypes:
+  - Egress
+  - Ingress
+  ingress:
+    - {}  // all incoming traffic is allowed.
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          name: mysql
+    ports:
+    - protocol: TCP
+      port: 3306
+
+  - to:
+    - podSelector:
+        matchLabels:
+          name: payroll
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+
+
+#### Custom Resource Definition  ####
+#1st define what such resource is:
+
+flightticket-custom-definition.yml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefintion
+metadata:
+  name: flighttickets.flights.com
+spec:
+  scope: Namespaced
+  group: flights.com  //must match to apiVersion in flightticket.yml
+  names:
+    kind: FlightTicket // $ kubectl api-resources will return below names
+    singular: flightticket
+    plural: flighttickets
+    shotrNames:
+      - ft  // $ kubectl get ft
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema: // match to spec section in flightticket.yml
+		  type: object
+		  properties: 
+			spec:
+    		  type:
+ 			  properties:
+			    from:
+  				  type: string
+   				to:
+				  type: string
+				number:
+				  type: ingeter
+    			  minimum: 1
+ 				  maximum: 10
+
+
+flightticket.yml
+
+apiVersion: flights.com/v1
+kind: FlightTicket
+metadata:
+  name: my-flight-ticket
+spec:
+  from: Mumbai
+  to: London
+  number: 2
+
+### Custom Controllers ###
+
+
+
