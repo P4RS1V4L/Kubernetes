@@ -1915,9 +1915,82 @@ spec:
 
 #### Storage  #####
 
-## Docker Storage Drivers ##
+## Persistent Volume ##
+pv-definition.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol1
+spec:
+  accessModes:
+  - ReadWriteOnce //ReadOnlyMany, ReadWriteMany
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /tmp/data
+  awsElasticBlockStorage:
+    volumeID: <volume-id>
+    fsType: ext4
+
+## Persistent Volume Claims ##
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myclaim
+spec: 
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+
+After delete command persistentVolumeReclaimPolicy:
+Retain - keeps PV and it's data
+Delete - deletes PV
+Recycle - data is scrubbed and PV is made available for claims again
+
+  volumes:
+  - name: log-volume
+    persistentVolumeClaim:
+      claimName: claim-log-1
 
 
+## Storage Classes ##
 
-## Volume Drivers ##
+Why storage class? because you can create different classes of storage (silver, gold, platinum, etc...)
+Helps in automatically povision storage in cloud when is needed. Static provisioning - make sure that storage is available on cloud before calling it via code.
+Dynamic provisioning - automatic provisioning storage on cloud and attach that to Pod when the claim is made.
+
+sc-definition.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: google-storage
+  provisioner: kubernetes.io/gce-pd
+
+How to reference to storage class in pvc-definition.yaml: 
+apiVersion: v1
+kind: PersistentVolumeClass
+metadata:
+  name: myclaim
+spec:
+  accessMode:
+  - ReadWriteOnce
+  storageClassName: google-storage
+  resources:
+    requests:
+      storage: 500Mi
+
+How to reference to storage class in pod definition:
+
+apiVersion: v1
+(...)
+spec:
+  containers:
+  (...)
+    volumes:
+    - name: data-volume
+      persistentVolumeClaim:
+        claimName: myclaim
 
