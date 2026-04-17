@@ -1994,3 +1994,24 @@ spec:
       persistentVolumeClaim:
         claimName: myclaim
 
+#### Networking ####
+
+$ ip link									  //  list and modify interfaces on host.
+$ ip addr 									  //  list assigned addreses to those interfaces
+$ ip addr add 192.168.1.10/24 dev eth0        //  set ip address on interfaces. Changes are valid till restart. To persist changes set them in /etc/network/interfaces file.
+$ route
+$ ip route add 192.168.2.0/24 via 192.168.1.1 //  192.168.2.0 - system B network address, 192.168.1.1 - gateway
+$ ip route add 192.168.1.0/24 via 192.168.2.1 //  192.168.1.0 - system A network address, 192.168.2.1 - gateway
+$ ip route add 172.217.194.0 via 192.168.2.1  //  172.217.194.0 - internet IP address
+$ ip route add defvault via 192.168.2.1 	  //  any network via 192.168...
+
+$ cat /proc/sys/net/ipv4/ip_forward 		  //  forwarding by default is disabled/ set to 0
+$ echo 1 > /proc/sys/net/ipv4/ip_forward	  //  1
+
+## DNS ##
+
+$ cat >> //etc/hosts
+	192.168.1.11	db
+$ cat /etc/resolv.conf
+	nameserver 192.168.1.100
+$ cat /etc/nsswitch.conf     // order of entries being checked
