@@ -2002,7 +2002,7 @@ $ ip addr add 192.168.1.10/24 dev eth0        //  set ip address on interfaces. 
 $ route
 $ ip route add 192.168.2.0/24 via 192.168.1.1 //  192.168.2.0 - system B network address, 192.168.1.1 - gateway
 $ ip route add 192.168.1.0/24 via 192.168.2.1 //  192.168.1.0 - system A network address, 192.168.2.1 - gateway
-$ ip route add 172.217.194.0 via 192.168.2.1  //  172.217.194.0 - internet IP address
+$ ip route add 172.217.194.0 via 192.168.2.1  //  172.217.194.0 - internet IP address,  192.168.2.1 - gateway
 $ ip route add defvault via 192.168.2.1 	  //  any network via 192.168...
 
 $ cat /proc/sys/net/ipv4/ip_forward 		  //  forwarding by default is disabled/ set to 0
@@ -2015,3 +2015,117 @@ $ cat >> //etc/hosts
 $ cat /etc/resolv.conf
 	nameserver 192.168.1.100
 $ cat /etc/nsswitch.conf     // order of entries being checked
+
+## Network Namespaces ##
+$ ip netns red
+$ ip netns blue
+$ ip link //list interfaces on host,
+$ ip netns exec red ip link (or $ ip -n red link) // list interfaces on host in 'red' namespace
+$ arp 				// display list of entries on host. command 'arp' run inside container will display no entries
+
+## Docker Networking ##
+
+net-script.sh:
+# Create veth pair
+  ip link add ...
+
+# Attach veth pair
+  ip link set ...
+
+# Assign IP Address
+  ip -n <namespace> addr add ...
+  ip -n <namespace> route add ...
+
+# Bring Up Interface
+  ip -n <namespace> link set ...
+
+## How to run the script automatically when a pod is created on Kubernetes?
+Here CNI comes in :
+net-script.sh:
+# Create veth pair
+# Attach veth pair
+# Assign IP Address
+# Bring Up Interface
+  ip -n <namespace> link set ...
+#Delete veth pair
+  ip link del ...
+
+## CNI in Kubernetes
+/opt/cni/bin   			
+
+
+q: Inspect the kubelet service and identify the container runtime endpoint value is set for Kubernetes.
+$ cat /var/lib/kubelet/config.yaml | grep containerRuntimeEndpoint
+q: What is the CNI plugin configured to be used on this kubernetes cluster?
+$ ls /etc/cni/net.d/
+q: What binary executable file will be invoked by the container runtime after a container and its associated namespace are created?
+$ /etc/cni/net.d/10-flannel.conflist
+
+$ kubectl get pods -o wide
+$ kubectl exec -it frontend -- curl -m 5 172.17.0.4
+
+To clean up the Flannel CNI from the cluster, delete the Flannel DaemonSet, configuration file, as well as the ConfigMap hosting the Flannel configuration:
+kubectl delete daemonset -n kube-flannel kube-flannel-ds
+kubectl delete cm kube-flannel-cfg -n kube-flannel
+rm /etc/cni/net.d/10-flannel.conflist
+
+
+First, install the Calico CRDs:
+
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.0/manifests/operator-crds.yaml
+Then install the Calico operator:
+
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.0/manifests/tigera-operator.yaml
+Download the custom resource definition yaml:
+
+curl https://raw.githubusercontent.com/projectcalico/calico/v3.31.0/manifests/custom-resources.yaml -O
+Edit the file to update the CIDR field to 172.17.0.0/16 for pod communication to work successfully on the cluster:
+
+# Edit custom-resources.yaml and update the cidr field
+Edit the file to update the CIDR network. The file should look like this:
+
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  calicoNetwork:
+    ipPools:
+    - name: default-ipv4-ippool
+      blockSize: 26
+      cidr: 172.17.0.0/16
+      encapsulation: VXLANCrossSubnet
+      natOutgoing: Enabled
+      nodeSelector: all()
+---
+apiVersion: operator.tigera.io/v1
+kind: APIServer
+metadata:
+  name: default
+spec: {}
+Apply the manifest file:
+
+kubectl apply -f custom-resources.yaml
+Wait until the calico pods are running:
+
+watch kubectl get pods -A
+You may ignore errors on the csi-node-driver pod deployed in the calico-system namespace.
+
+## Service Networking
+!! Calico CNI, which supports Network Policies
+$ kubectl get service
+$ kube-api-server --service-cluster-ip-range inNet
+$ ps aux | grep kube-api-server
+
+$ iptables -L -t nat | grep db-service
+
+$ cat /var/log/kube-proxy.log
+$ kubectl logs -n kube-system <kube-proxy-pod-name>
+
+## DNS in Kubenetes ##
+$ kubectl -n kube-system describe deployments.apps coredns | grep -A2 Args | grep Corefile
+
+#### Ingress ####
+
+$ kubectl get ingress --all-namespaces
+
